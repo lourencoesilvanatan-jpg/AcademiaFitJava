@@ -4,11 +4,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
-import javax.enterprise.context.ApplicationScoped;
 import dao.UsuarioDAO;
 import model.Usuario;
 
-@ApplicationScoped
 public class UsuarioService {
 
     private UsuarioDAO usuarioDAO;

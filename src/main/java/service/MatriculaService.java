@@ -1,12 +1,10 @@
 package service;
 
 import java.util.List;
-import javax.enterprise.context.ApplicationScoped;
 import dao.MatriculaDAO;
 import model.Matricula;
 import model.StatusMatricula;
 
-@ApplicationScoped
 public class MatriculaService {
 
     private MatriculaDAO matriculaDAO;

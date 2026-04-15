@@ -2,11 +2,13 @@ import React, { useEffect, useState, useCallback } from 'react';
 import api from '../services/api';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
+import Loading from '../components/Loading';
 
 const NIVEIS = ['INICIANTE', 'INTERMEDIARIO', 'AVANCADO'];
 const NIVEL_LABEL = { INICIANTE: 'Iniciante', INTERMEDIARIO: 'Intermediario', AVANCADO: 'Avancado' };
 const EMPTY_TREINO = { nome: '', objetivo: '', nivel: '' };
 const EMPTY_TE = { exercicio: '', series: '', repeticoes: '', cargaSugerida: '', descansoSegundos: '', ordem: '' };
+const PER_PAGE = 10;
 
 export default function Treinos() {
   const [treinos, setTreinos] = useState([]);
@@ -17,9 +19,15 @@ export default function Treinos() {
   const [editId, setEditId] = useState(null);
   const [confirm, setConfirm] = useState(null);
   const [toast, setToast] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
 
   const carregar = useCallback(() => {
-    api.get('/treinos').then((r) => setTreinos(r.data)).catch(() => {});
+    setLoading(true);
+    api.get('/treinos')
+      .then((r) => setTreinos(r.data))
+      .catch(() => setToast({ msg: 'Erro ao carregar treinos', type: 'error' }))
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -100,6 +108,9 @@ export default function Treinos() {
     setForm(EMPTY_TREINO); setEditId(null); setExerciciosDoTreino([]); setTeForm(EMPTY_TE);
   };
 
+  const totalPages = Math.ceil(treinos.length / PER_PAGE);
+  const paginados = treinos.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
+
   return (
     <>
       <Toast message={toast?.msg} type={toast?.type} onClose={() => setToast(null)} />
@@ -109,23 +120,34 @@ export default function Treinos() {
 
       <div className="card">
         <h3>Treinos</h3>
-        <table className="data-table">
-          <thead><tr><th>Nome</th><th>Objetivo</th><th>Nivel</th><th>Acoes</th></tr></thead>
-          <tbody>
-            {treinos.length === 0 && <tr><td colSpan="4" className="empty">Nenhum treino cadastrado.</td></tr>}
-            {treinos.map((t) => (
-              <tr key={t.idTreino}>
-                <td>{t.nome}</td>
-                <td>{t.objetivo}</td>
-                <td><span className={`badge-nivel badge-nivel-${t.nivel || ''}`}>{NIVEL_LABEL[t.nivel] || ''}</span></td>
-                <td className="actions">
-                  <button className="link-edit" onClick={() => editar(t)}>Editar</button>
-                  <button className="link-delete" onClick={() => setConfirm(t.idTreino)}>Excluir</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {loading ? <Loading /> : (
+          <>
+            <table className="data-table">
+              <thead><tr><th>Nome</th><th>Objetivo</th><th>Nivel</th><th>Acoes</th></tr></thead>
+              <tbody>
+                {paginados.length === 0 && <tr><td colSpan="4" className="empty">Nenhum treino cadastrado.</td></tr>}
+                {paginados.map((t) => (
+                  <tr key={t.idTreino}>
+                    <td>{t.nome}</td>
+                    <td>{t.objetivo}</td>
+                    <td><span className={`badge-nivel badge-nivel-${t.nivel || ''}`}>{NIVEL_LABEL[t.nivel] || ''}</span></td>
+                    <td className="actions">
+                      <button className="link-edit" onClick={() => editar(t)}>Editar</button>
+                      <button className="link-delete" onClick={() => setConfirm(t.idTreino)}>Excluir</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {totalPages > 1 && (
+              <div className="pagination">
+                <button className="btn-page" disabled={page === 0} onClick={() => setPage(page - 1)}>Anterior</button>
+                <span className="page-info">Pagina {page + 1} de {totalPages}</span>
+                <button className="btn-page" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}>Proxima</button>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       <div className="card">

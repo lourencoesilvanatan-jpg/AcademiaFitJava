@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import Loading from '../components/Loading';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/dashboard').then((res) => setStats(res.data)).catch(() => {});
+    api.get('/dashboard')
+      .then((res) => setStats(res.data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   const cards = [
@@ -21,14 +26,16 @@ export default function Dashboard() {
     <div className="welcome-card">
       <h1>Bem-vindo ao AcademiaFit</h1>
       <p>Sistema completo de gerenciamento para sua academia.</p>
-      <div className="stats-grid">
-        {cards.map((c) => (
-          <Link key={c.label} to={c.path} className="stat-item" style={{ background: c.color }}>
-            <div className="stat-number">{c.value ?? '-'}</div>
-            <div className="stat-label">{c.label}</div>
-          </Link>
-        ))}
-      </div>
+      {loading ? <Loading /> : (
+        <div className="stats-grid">
+          {cards.map((c) => (
+            <Link key={c.label} to={c.path} className="stat-item" style={{ background: c.color }}>
+              <div className="stat-number">{c.value ?? '-'}</div>
+              <div className="stat-label">{c.label}</div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

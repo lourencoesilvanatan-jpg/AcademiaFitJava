@@ -1,11 +1,9 @@
 package service;
 
 import java.util.List;
-import javax.enterprise.context.ApplicationScoped;
 import dao.PlanoDAO;
 import model.Plano;
 
-@ApplicationScoped
 public class PlanoService {
 
     private PlanoDAO planoDAO;

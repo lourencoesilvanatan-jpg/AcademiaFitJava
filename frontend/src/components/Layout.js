@@ -9,6 +9,7 @@ const navItems = [
   { path: '/matriculas', label: 'Matriculas' },
   { path: '/exercicios', label: 'Exercicios' },
   { path: '/treinos', label: 'Treinos' },
+  { path: '/usuarios', label: 'Usuarios' },
 ];
 
 export default function Layout({ children }) {

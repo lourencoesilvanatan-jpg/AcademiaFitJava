@@ -9,6 +9,7 @@ import Planos from './pages/Planos';
 import Matriculas from './pages/Matriculas';
 import Exercicios from './pages/Exercicios';
 import Treinos from './pages/Treinos';
+import Usuarios from './pages/Usuarios';
 import './App.css';
 
 function PrivateRoute({ children }) {
@@ -28,6 +29,7 @@ function AppRoutes() {
       <Route path="/matriculas" element={<PrivateRoute><Matriculas /></PrivateRoute>} />
       <Route path="/exercicios" element={<PrivateRoute><Exercicios /></PrivateRoute>} />
       <Route path="/treinos" element={<PrivateRoute><Treinos /></PrivateRoute>} />
+      <Route path="/usuarios" element={<PrivateRoute><Usuarios /></PrivateRoute>} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

@@ -1,11 +1,9 @@
 package service;
 
 import java.util.List;
-import javax.enterprise.context.ApplicationScoped;
 import dao.ExercicioDAO;
 import model.Exercicio;
 
-@ApplicationScoped
 public class ExercicioService {
 
     private ExercicioDAO exercicioDAO;

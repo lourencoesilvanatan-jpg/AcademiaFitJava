@@ -1,11 +1,9 @@
 package service;
 
 import java.util.List;
-import javax.enterprise.context.ApplicationScoped;
 import dao.TreinoDAO;
 import model.Treino;
 
-@ApplicationScoped
 public class TreinoService {
 
     private TreinoDAO treinoDAO;
