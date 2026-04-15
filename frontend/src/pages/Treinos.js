@@ -153,16 +153,15 @@ export default function Treinos() {
       <div className="card">
         <h3>{editId ? 'Editar Treino' : 'Cadastro de Treino'}</h3>
         <form className="form-grid" onSubmit={salvar}>
-          <label>Nome:</label>
+          <label>Nome</label>
           <input type="text" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required placeholder="Ex: Treino A - Peito" />
-          <label>Objetivo:</label>
+          <label>Objetivo</label>
           <input type="text" value={form.objetivo} onChange={(e) => setForm({ ...form, objetivo: e.target.value })} placeholder="Ex: Hipertrofia" />
-          <label>Nivel:</label>
+          <label>Nivel</label>
           <select value={form.nivel} onChange={(e) => setForm({ ...form, nivel: e.target.value })}>
             <option value="">-- Selecione --</option>
             {NIVEIS.map((n) => <option key={n} value={n}>{NIVEL_LABEL[n]}</option>)}
           </select>
-          <div></div>
           <div className="btn-group">
             <button type="submit" className="btn btn-save">{editId ? 'Atualizar' : 'Salvar'}</button>
             <button type="button" className="btn btn-cancel" onClick={novoTreino}>Limpar</button>

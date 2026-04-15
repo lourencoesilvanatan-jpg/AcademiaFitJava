@@ -102,16 +102,15 @@ export default function Exercicios() {
       <div className="card">
         <h3>{editId ? 'Editar Exercicio' : 'Cadastro de Exercicio'}</h3>
         <form className="form-grid" onSubmit={salvar}>
-          <label>Nome:</label>
+          <label>Nome</label>
           <input type="text" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required placeholder="Ex: Supino Reto" />
-          <label>Grupo Muscular:</label>
+          <label>Grupo Muscular</label>
           <select value={form.grupoMuscular} onChange={(e) => setForm({ ...form, grupoMuscular: e.target.value })}>
             <option value="">-- Selecione --</option>
             {GRUPOS.map((g) => <option key={g} value={g}>{GRUPO_LABEL[g]}</option>)}
           </select>
-          <label>Descricao:</label>
+          <label>Descricao</label>
           <textarea value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} rows="3" placeholder="Descricao do exercicio..." />
-          <div></div>
           <div className="btn-group">
             <button type="submit" className="btn btn-save">{editId ? 'Atualizar' : 'Salvar'}</button>
             <button type="button" className="btn btn-cancel" onClick={() => { setForm(EMPTY); setEditId(null); }}>Limpar</button>

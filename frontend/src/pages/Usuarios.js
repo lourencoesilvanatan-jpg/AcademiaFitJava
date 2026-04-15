@@ -95,14 +95,13 @@ export default function Usuarios() {
       <div className="card">
         <h3>{editId ? 'Editar Usuario' : 'Cadastro de Usuario'}</h3>
         <form className="form-grid" onSubmit={salvar}>
-          <label>Nome:</label>
+          <label>Nome</label>
           <input type="text" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required placeholder="Nome completo" />
-          <label>Login:</label>
+          <label>Login</label>
           <input type="text" value={form.login} onChange={(e) => setForm({ ...form, login: e.target.value })} required placeholder="Login de acesso" />
-          <label>{editId ? 'Nova Senha:' : 'Senha:'}</label>
+          <label>{editId ? 'Nova Senha' : 'Senha'}</label>
           <input type="password" value={form.senha} onChange={(e) => setForm({ ...form, senha: e.target.value })}
             placeholder={editId ? 'Deixe vazio para manter' : 'Senha de acesso'} required={!editId} />
-          <div></div>
           <div className="btn-group">
             <button type="submit" className="btn btn-save">{editId ? 'Atualizar' : 'Salvar'}</button>
             <button type="button" className="btn btn-cancel" onClick={() => { setForm(EMPTY); setEditId(null); }}>Limpar</button>

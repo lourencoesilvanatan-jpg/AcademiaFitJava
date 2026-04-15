@@ -118,25 +118,24 @@ export default function Matriculas() {
       <div className="card">
         <h3>{editId ? 'Editar Matricula' : 'Cadastro de Matricula'}</h3>
         <form className="form-grid" onSubmit={salvar}>
-          <label>Aluno:</label>
+          <label>Aluno</label>
           <select value={form.aluno} onChange={(e) => setForm({ ...form, aluno: e.target.value })} required>
             <option value="">-- Selecione --</option>
             {alunos.map((a) => <option key={a.idAluno} value={a.idAluno}>{a.nome}</option>)}
           </select>
-          <label>Plano:</label>
+          <label>Plano</label>
           <select value={form.plano} onChange={(e) => setForm({ ...form, plano: e.target.value })} required>
             <option value="">-- Selecione --</option>
             {planos.map((p) => <option key={p.idPlano} value={p.idPlano}>{p.nome}</option>)}
           </select>
-          <label>Data Inicio:</label>
+          <label>Data Inicio</label>
           <input type="date" value={form.dataInicio} onChange={(e) => setForm({ ...form, dataInicio: e.target.value })} required />
-          <label>Data Fim:</label>
+          <label>Data Fim</label>
           <input type="date" value={form.dataFim} onChange={(e) => setForm({ ...form, dataFim: e.target.value })} placeholder="Calculada automaticamente" />
-          <label>Status:</label>
+          <label>Status</label>
           <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
             {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
           </select>
-          <div></div>
           <div className="btn-group">
             <button type="submit" className="btn btn-save">{editId ? 'Atualizar' : 'Salvar'}</button>
             <button type="button" className="btn btn-cancel" onClick={() => { setForm(EMPTY); setEditId(null); }}>Limpar</button>

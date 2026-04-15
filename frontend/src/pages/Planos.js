@@ -100,15 +100,14 @@ export default function Planos() {
       <div className="card">
         <h3>{editId ? 'Editar Plano' : 'Cadastro de Plano'}</h3>
         <form className="form-grid" onSubmit={salvar}>
-          <label>Nome:</label>
+          <label>Nome</label>
           <input type="text" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required placeholder="Ex: Plano Mensal" />
-          <label>Valor (R$):</label>
+          <label>Valor (R$)</label>
           <input type="number" step="0.01" min="0.01" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} required placeholder="99.90" />
-          <label>Duracao (dias):</label>
+          <label>Duracao (dias)</label>
           <input type="number" min="1" value={form.duracaoDias} onChange={(e) => setForm({ ...form, duracaoDias: e.target.value })} required placeholder="30" />
-          <label>Descricao:</label>
+          <label>Descricao</label>
           <textarea value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} placeholder="Descricao do plano" rows="2" />
-          <div></div>
           <div className="btn-group">
             <button type="submit" className="btn btn-save">{editId ? 'Atualizar' : 'Salvar'}</button>
             <button type="button" className="btn btn-cancel" onClick={() => { setForm(EMPTY); setEditId(null); }}>Limpar</button>

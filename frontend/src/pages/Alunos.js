@@ -138,28 +138,21 @@ export default function Alunos() {
       <div className="card">
         <h3>{editId ? 'Editar Aluno' : 'Cadastro de Aluno'}</h3>
         <form className="form-grid" onSubmit={salvar}>
-          <label>Nome:</label>
-          <div>
-            <input type="text" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Nome completo" />
-            {errors.nome && <span className="field-error">{errors.nome}</span>}
-          </div>
-          <label>CPF:</label>
-          <div>
-            <input type="text" value={form.cpf} maxLength={14}
-              onChange={(e) => setForm({ ...form, cpf: maskCPF(e.target.value) })} placeholder="999.999.999-99" />
-            {errors.cpf && <span className="field-error">{errors.cpf}</span>}
-          </div>
-          <label>E-mail:</label>
-          <div>
-            <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@exemplo.com" />
-            {errors.email && <span className="field-error">{errors.email}</span>}
-          </div>
-          <label>Telefone:</label>
+          <label>Nome</label>
+          <input type="text" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Nome completo" />
+          {errors.nome && <span className="field-error">{errors.nome}</span>}
+          <label>CPF</label>
+          <input type="text" value={form.cpf} maxLength={14}
+            onChange={(e) => setForm({ ...form, cpf: maskCPF(e.target.value) })} placeholder="999.999.999-99" />
+          {errors.cpf && <span className="field-error">{errors.cpf}</span>}
+          <label>E-mail</label>
+          <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@exemplo.com" />
+          {errors.email && <span className="field-error">{errors.email}</span>}
+          <label>Telefone</label>
           <input type="text" value={form.telefone} maxLength={15}
             onChange={(e) => setForm({ ...form, telefone: maskPhone(e.target.value) })} placeholder="(99) 99999-9999" />
-          <label>Nascimento:</label>
+          <label>Nascimento</label>
           <input type="date" value={form.dataNascimento} onChange={(e) => setForm({ ...form, dataNascimento: e.target.value })} />
-          <div></div>
           <div className="btn-group">
             <button type="submit" className="btn btn-save">{editId ? 'Atualizar' : 'Salvar'}</button>
             <button type="button" className="btn btn-cancel" onClick={() => { setForm(EMPTY); setEditId(null); setErrors({}); }}>Limpar</button>
