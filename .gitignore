@@ -1,0 +1,19 @@
+# Build
+target/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend dependencies
+frontend/node_modules/

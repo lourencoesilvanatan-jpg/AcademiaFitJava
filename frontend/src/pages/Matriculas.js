@@ -1,0 +1,148 @@
+import React, { useEffect, useState, useCallback } from 'react';
+import api from '../services/api';
+import ConfirmDialog from '../components/ConfirmDialog';
+import Toast from '../components/Toast';
+import Loading from '../components/Loading';
+
+const STATUS_OPTIONS = ['ATIVA', 'CANCELADA', 'EXPIRADA'];
+const STATUS_LABEL = { ATIVA: 'Ativa', CANCELADA: 'Cancelada', EXPIRADA: 'Expirada' };
+const EMPTY = { aluno: '', plano: '', dataInicio: '', dataFim: '', status: 'ATIVA' };
+const PER_PAGE = 10;
+
+export default function Matriculas() {
+  const [matriculas, setMatriculas] = useState([]);
+  const [alunos, setAlunos] = useState([]);
+  const [planos, setPlanos] = useState([]);
+  const [form, setForm] = useState(EMPTY);
+  const [editId, setEditId] = useState(null);
+  const [confirm, setConfirm] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+
+  const carregar = useCallback(() => {
+    setLoading(true);
+    api.get('/matriculas')
+      .then((r) => setMatriculas(r.data))
+      .catch(() => setToast({ msg: 'Erro ao carregar matriculas', type: 'error' }))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    carregar();
+    api.get('/alunos').then((r) => setAlunos(r.data)).catch(() => {});
+    api.get('/planos').then((r) => setPlanos(r.data)).catch(() => {});
+  }, [carregar]);
+
+  const salvar = async (e) => {
+    e.preventDefault();
+    try {
+      const alunoObj = alunos.find((a) => String(a.idAluno) === String(form.aluno));
+      const planoObj = planos.find((p) => String(p.idPlano) === String(form.plano));
+      const payload = {
+        aluno: alunoObj, plano: planoObj,
+        dataInicio: form.dataInicio, dataFim: form.dataFim || null,
+        status: form.status,
+      };
+      if (editId) {
+        await api.put(`/matriculas/${editId}`, payload);
+        setToast({ msg: 'Matricula atualizada!', type: 'success' });
+      } else {
+        await api.post('/matriculas', payload);
+        setToast({ msg: 'Matricula cadastrada!', type: 'success' });
+      }
+      setForm(EMPTY); setEditId(null); carregar();
+    } catch (err) {
+      setToast({ msg: err.response?.data?.erro || 'Erro ao salvar', type: 'error' });
+    }
+  };
+
+  const editar = (m) => {
+    setForm({
+      aluno: m.aluno?.idAluno || '', plano: m.plano?.idPlano || '',
+      dataInicio: m.dataInicio || '', dataFim: m.dataFim || '', status: m.status || 'ATIVA',
+    });
+    setEditId(m.idMatricula);
+  };
+
+  const excluir = async (id) => {
+    try { await api.delete(`/matriculas/${id}`); setToast({ msg: 'Matricula excluida!', type: 'success' }); carregar(); }
+    catch (err) { setToast({ msg: err.response?.data?.erro || 'Erro ao excluir', type: 'error' }); }
+    setConfirm(null);
+  };
+
+  const totalPages = Math.ceil(matriculas.length / PER_PAGE);
+  const paginados = matriculas.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
+
+  return (
+    <>
+      <Toast message={toast?.msg} type={toast?.type} onClose={() => setToast(null)} />
+      <ConfirmDialog show={!!confirm} title="Confirmar Exclusao"
+        message="Tem certeza que deseja excluir esta matricula?" onCancel={() => setConfirm(null)}
+        onConfirm={() => excluir(confirm)} />
+
+      <div className="card">
+        <h3>Matriculas</h3>
+        {loading ? <Loading /> : (
+          <>
+            <table className="data-table">
+              <thead><tr><th>Aluno</th><th>Plano</th><th>Inicio</th><th>Fim</th><th>Status</th><th>Acoes</th></tr></thead>
+              <tbody>
+                {paginados.length === 0 && <tr><td colSpan="6" className="empty">Nenhuma matricula encontrada.</td></tr>}
+                {paginados.map((m) => (
+                  <tr key={m.idMatricula}>
+                    <td>{m.aluno?.nome}</td>
+                    <td>{m.plano?.nome}</td>
+                    <td>{m.dataInicio}</td>
+                    <td>{m.dataFim}</td>
+                    <td><span className={`status-badge status-${m.status}`}>{STATUS_LABEL[m.status] || m.status}</span></td>
+                    <td className="actions">
+                      <button className="link-edit" onClick={() => editar(m)}>Editar</button>
+                      <button className="link-delete" onClick={() => setConfirm(m.idMatricula)}>Excluir</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {totalPages > 1 && (
+              <div className="pagination">
+                <button className="btn-page" disabled={page === 0} onClick={() => setPage(page - 1)}>Anterior</button>
+                <span className="page-info">Pagina {page + 1} de {totalPages}</span>
+                <button className="btn-page" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}>Proxima</button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="card">
+        <h3>{editId ? 'Editar Matricula' : 'Cadastro de Matricula'}</h3>
+        <form className="form-grid" onSubmit={salvar}>
+          <label>Aluno:</label>
+          <select value={form.aluno} onChange={(e) => setForm({ ...form, aluno: e.target.value })} required>
+            <option value="">-- Selecione --</option>
+            {alunos.map((a) => <option key={a.idAluno} value={a.idAluno}>{a.nome}</option>)}
+          </select>
+          <label>Plano:</label>
+          <select value={form.plano} onChange={(e) => setForm({ ...form, plano: e.target.value })} required>
+            <option value="">-- Selecione --</option>
+            {planos.map((p) => <option key={p.idPlano} value={p.idPlano}>{p.nome}</option>)}
+          </select>
+          <label>Data Inicio:</label>
+          <input type="date" value={form.dataInicio} onChange={(e) => setForm({ ...form, dataInicio: e.target.value })} required />
+          <label>Data Fim:</label>
+          <input type="date" value={form.dataFim} onChange={(e) => setForm({ ...form, dataFim: e.target.value })} placeholder="Calculada automaticamente" />
+          <label>Status:</label>
+          <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+            {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+          </select>
+          <div></div>
+          <div className="btn-group">
+            <button type="submit" className="btn btn-save">{editId ? 'Atualizar' : 'Salvar'}</button>
+            <button type="button" className="btn btn-cancel" onClick={() => { setForm(EMPTY); setEditId(null); }}>Limpar</button>
+          </div>
+        </form>
+      </div>
+    </>
+  );
+}
