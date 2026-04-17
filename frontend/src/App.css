@@ -199,7 +199,7 @@ body {
 .data-table tbody tr:last-child td { border-bottom: none; }
 td.empty { text-align: center !important; color: var(--color-text-muted); padding: 40px 30px !important; font-style: italic; }
 td.actions { white-space: nowrap; text-align: center; }
-td.actions .link-edit + .link-delete { margin-left: 6px; }
+td.actions > * + * { margin-left: 6px; }
 
 /* ===== FORM ===== */
 .form-grid {
@@ -393,6 +393,16 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   background: #fff; border-radius: 14px; width: 100%; max-width: 420px;
   box-shadow: 0 25px 70px rgba(0,0,0,0.45); overflow: hidden;
   animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-theme="dark"] .login-card {
+  --color-text: #1e293b;
+  --color-text-soft: #475569;
+  --color-text-muted: #94a3b8;
+  --color-border: #e2e8f0;
+  --color-border-strong: #cbd5e1;
+  --bg-input: #ffffff;
+  --bg-subtle: #f1f5f9;
+  color: #1e293b;
 }
 .login-header {
   background: linear-gradient(135deg, #0a0a0a 0%, #1c1917 100%);
