@@ -46,8 +46,8 @@ export default function Login() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-header">
-          <h1>AcademiaFit</h1>
-          <p>Sistema de Gerenciamento de Academia</p>
+          <h1>Academia<span className="brand-accent">Fit</span></h1>
+          <p>Sistema de Gestao</p>
         </div>
         <form className="login-form" onSubmit={handleSubmit}>
           {erro && <div className="msg msg-error">{erro}</div>}

@@ -34,6 +34,16 @@ const MoonIcon = () => (
   </svg>
 );
 
+const DumbbellIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6.5 6.5v11" />
+    <path d="M17.5 6.5v11" />
+    <path d="M3 9.5v5" />
+    <path d="M21 9.5v5" />
+    <path d="M6.5 12h11" />
+  </svg>
+);
+
 export default function Layout({ children }) {
   const { usuario, logout } = useAuth();
   const { theme, toggle } = useTheme();
@@ -43,8 +53,11 @@ export default function Layout({ children }) {
     <div className="app">
       <header className="header">
         <div className="header-brand">
-          <h2>AcademiaFit</h2>
-          <span>Sistema de Gerenciamento</span>
+          <span className="header-brand-icon" aria-hidden="true"><DumbbellIcon /></span>
+          <div className="header-brand-text">
+            <h2>Academia<span className="brand-accent">Fit</span></h2>
+            <span>Sistema de Gestao</span>
+          </div>
         </div>
         <div className="header-user">
           <button className="btn-theme" onClick={toggle} title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'} aria-label="Alternar tema">
@@ -73,7 +86,7 @@ export default function Layout({ children }) {
       </main>
 
       <footer className="footer">
-        AcademiaFit &copy; 2026 - Sistema de Gerenciamento de Academia
+        <span className="footer-accent">AcademiaFit</span> &copy; 2026 &middot; Bora treinar
       </footer>
     </div>
   );

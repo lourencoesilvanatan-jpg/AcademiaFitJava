@@ -6,6 +6,12 @@ import Toast from '../components/Toast';
 import Loading from '../components/Loading';
 import { maskCPF, maskPhone, validateCPF } from '../utils/masks';
 
+function formatarData(iso) {
+  if (!iso) return '-';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
 const EMPTY = { nome: '', cpf: '', email: '', telefone: '', dataNascimento: '' };
 const PAGE_SIZE = 10;
 
@@ -142,7 +148,7 @@ export default function Alunos() {
                     <td>{a.cpf}</td>
                     <td>{a.email}</td>
                     <td>{a.telefone}</td>
-                    <td>{a.dataNascimento}</td>
+                    <td>{formatarData(a.dataNascimento)}</td>
                     <td className="actions">
                       <button className="link-edit" onClick={() => abrirEdicao(a)}>Editar</button>
                       <button className="link-delete" onClick={() => setConfirm(a.idAluno)}>Excluir</button>
