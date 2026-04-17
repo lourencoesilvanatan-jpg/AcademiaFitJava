@@ -41,6 +41,18 @@ public class AlunoService {
         return alunoDAO.buscarPorNome(nome);
     }
 
+    public List<Aluno> listarPaginado(int page, int size) {
+        return alunoDAO.buscarPaginado(page, size, "idAluno");
+    }
+
+    public List<Aluno> buscarPorNomePaginado(String nome, int page, int size) {
+        return alunoDAO.buscarPorNomePaginado(nome, page, size);
+    }
+
+    public long contarPorNome(String nome) {
+        return alunoDAO.contarPorNome(nome);
+    }
+
     public long contarTodos() {
         return alunoDAO.contarTodos();
     }

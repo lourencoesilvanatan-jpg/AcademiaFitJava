@@ -34,6 +34,10 @@ public class ExercicioService {
         return exercicioDAO.buscarTodos();
     }
 
+    public List<Exercicio> listarPaginado(int page, int size) {
+        return exercicioDAO.buscarPaginado(page, size, "idExercicio");
+    }
+
     public long contarTodos() {
         return exercicioDAO.contarTodos();
     }

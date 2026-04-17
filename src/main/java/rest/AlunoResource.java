@@ -2,6 +2,7 @@ package rest;
 
 import model.Aluno;
 import rest.dto.ErrorResponse;
+import rest.dto.PageResponse;
 import service.AlunoService;
 
 import javax.ws.rs.*;
@@ -17,9 +18,18 @@ public class AlunoResource {
     private AlunoService alunoService = new AlunoService();
 
     @GET
-    public Response listar(@QueryParam("nome") String nome) {
-        List<Aluno> alunos = alunoService.buscarPorNome(nome);
-        return Response.ok(alunos).build();
+    public Response listar(@QueryParam("nome") String nome,
+                           @QueryParam("page") @DefaultValue("0") int page,
+                           @QueryParam("size") @DefaultValue("10") int size) {
+        page = Math.max(0, page);
+        size = Math.max(1, Math.min(size, 10000));
+
+        boolean filtrando = nome != null && !nome.trim().isEmpty();
+        long total = filtrando ? alunoService.contarPorNome(nome) : alunoService.contarTodos();
+        List<Aluno> content = filtrando
+                ? alunoService.buscarPorNomePaginado(nome, page, size)
+                : alunoService.listarPaginado(page, size);
+        return Response.ok(new PageResponse<>(content, total, page, size)).build();
     }
 
     @GET

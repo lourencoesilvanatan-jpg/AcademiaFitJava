@@ -51,9 +51,16 @@ public class GenericDAO<T> {
     }
 
     public List<T> buscarPaginado(int pagina, int tamanhoPagina) {
+        return buscarPaginado(pagina, tamanhoPagina, null);
+    }
+
+    public List<T> buscarPaginado(int pagina, int tamanhoPagina, String orderBy) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
             String jpql = "SELECT e FROM " + clazz.getSimpleName() + " e";
+            if (orderBy != null && !orderBy.isEmpty()) {
+                jpql += " ORDER BY e." + orderBy;
+            }
             return em.createQuery(jpql, clazz)
                     .setFirstResult(pagina * tamanhoPagina)
                     .setMaxResults(tamanhoPagina)

@@ -7,7 +7,8 @@ import Loading from '../components/Loading';
 const STATUS_OPTIONS = ['ATIVA', 'CANCELADA', 'EXPIRADA'];
 const STATUS_LABEL = { ATIVA: 'Ativa', CANCELADA: 'Cancelada', EXPIRADA: 'Expirada' };
 const EMPTY = { aluno: '', plano: '', dataInicio: '', dataFim: '', status: 'ATIVA' };
-const PER_PAGE = 10;
+const PAGE_SIZE = 10;
+const ALL = 10000;
 
 export default function Matriculas() {
   const [matriculas, setMatriculas] = useState([]);
@@ -19,20 +20,27 @@ export default function Matriculas() {
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const carregar = useCallback(() => {
     setLoading(true);
-    api.get('/matriculas')
-      .then((r) => setMatriculas(r.data))
+    api.get('/matriculas', { params: { page, size: PAGE_SIZE } })
+      .then((r) => {
+        setMatriculas(r.data.content || []);
+        setTotalPages(r.data.totalPages || 0);
+      })
       .catch(() => setToast({ msg: 'Erro ao carregar matriculas', type: 'error' }))
       .finally(() => setLoading(false));
-  }, []);
+  }, [page]);
+
+  useEffect(() => { carregar(); }, [carregar]);
 
   useEffect(() => {
-    carregar();
-    api.get('/alunos').then((r) => setAlunos(r.data)).catch(() => {});
-    api.get('/planos').then((r) => setPlanos(r.data)).catch(() => {});
-  }, [carregar]);
+    api.get('/alunos', { params: { page: 0, size: ALL } })
+      .then((r) => setAlunos(r.data.content || [])).catch(() => {});
+    api.get('/planos', { params: { page: 0, size: ALL } })
+      .then((r) => setPlanos(r.data.content || [])).catch(() => {});
+  }, []);
 
   const salvar = async (e) => {
     e.preventDefault();
@@ -66,13 +74,16 @@ export default function Matriculas() {
   };
 
   const excluir = async (id) => {
-    try { await api.delete(`/matriculas/${id}`); setToast({ msg: 'Matricula excluida!', type: 'success' }); carregar(); }
-    catch (err) { setToast({ msg: err.response?.data?.erro || 'Erro ao excluir', type: 'error' }); }
+    try {
+      await api.delete(`/matriculas/${id}`);
+      setToast({ msg: 'Matricula excluida!', type: 'success' });
+      if (matriculas.length === 1 && page > 0) setPage(page - 1);
+      else carregar();
+    } catch (err) {
+      setToast({ msg: err.response?.data?.erro || 'Erro ao excluir', type: 'error' });
+    }
     setConfirm(null);
   };
-
-  const totalPages = Math.ceil(matriculas.length / PER_PAGE);
-  const paginados = matriculas.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
 
   return (
     <>
@@ -88,8 +99,8 @@ export default function Matriculas() {
             <table className="data-table">
               <thead><tr><th>Aluno</th><th>Plano</th><th>Inicio</th><th>Fim</th><th>Status</th><th>Acoes</th></tr></thead>
               <tbody>
-                {paginados.length === 0 && <tr><td colSpan="6" className="empty">Nenhuma matricula encontrada.</td></tr>}
-                {paginados.map((m) => (
+                {matriculas.length === 0 && <tr><td colSpan="6" className="empty">Nenhuma matricula encontrada.</td></tr>}
+                {matriculas.map((m) => (
                   <tr key={m.idMatricula}>
                     <td>{m.aluno?.nome}</td>
                     <td>{m.plano?.nome}</td>

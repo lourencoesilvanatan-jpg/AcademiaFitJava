@@ -17,9 +17,35 @@ public class MatriculaDAO extends GenericDAO<Matricula> {
         EntityManager em = JPAUtil.getEntityManager();
         try {
             return em.createQuery(
-                    "SELECT m FROM Matricula m WHERE m.aluno.idAluno = :idAluno", Matricula.class)
+                    "SELECT m FROM Matricula m WHERE m.aluno.idAluno = :idAluno ORDER BY m.idMatricula", Matricula.class)
                     .setParameter("idAluno", idAluno)
                     .getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    public List<Matricula> buscarPorAlunoPaginado(Long idAluno, int pagina, int tamanhoPagina) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            return em.createQuery(
+                    "SELECT m FROM Matricula m WHERE m.aluno.idAluno = :idAluno ORDER BY m.idMatricula", Matricula.class)
+                    .setParameter("idAluno", idAluno)
+                    .setFirstResult(pagina * tamanhoPagina)
+                    .setMaxResults(tamanhoPagina)
+                    .getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    public long contarPorAluno(Long idAluno) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            return em.createQuery(
+                    "SELECT COUNT(m) FROM Matricula m WHERE m.aluno.idAluno = :idAluno", Long.class)
+                    .setParameter("idAluno", idAluno)
+                    .getSingleResult();
         } finally {
             em.close();
         }

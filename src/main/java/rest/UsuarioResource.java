@@ -2,6 +2,7 @@ package rest;
 
 import model.Usuario;
 import rest.dto.ErrorResponse;
+import rest.dto.PageResponse;
 import service.UsuarioService;
 
 import javax.ws.rs.*;
@@ -20,8 +21,12 @@ public class UsuarioResource {
     private UsuarioService usuarioService = new UsuarioService();
 
     @GET
-    public Response listar() {
-        List<Map<String, Object>> usuarios = usuarioService.listarTodos().stream().map(u -> {
+    public Response listar(@QueryParam("page") @DefaultValue("0") int page,
+                           @QueryParam("size") @DefaultValue("10") int size) {
+        page = Math.max(0, page);
+        size = Math.max(1, Math.min(size, 10000));
+        long total = usuarioService.contarTodos();
+        List<Map<String, Object>> content = usuarioService.listarPaginado(page, size).stream().map(u -> {
             Map<String, Object> map = new LinkedHashMap<>();
             map.put("idUsuario", u.getIdUsuario());
             map.put("nome", u.getNome());
@@ -29,7 +34,7 @@ public class UsuarioResource {
             map.put("ativo", u.isAtivo());
             return map;
         }).collect(Collectors.toList());
-        return Response.ok(usuarios).build();
+        return Response.ok(new PageResponse<>(content, total, page, size)).build();
     }
 
     @POST

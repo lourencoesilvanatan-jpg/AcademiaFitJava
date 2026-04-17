@@ -2,6 +2,7 @@ package rest;
 
 import model.Matricula;
 import rest.dto.ErrorResponse;
+import rest.dto.PageResponse;
 import service.MatriculaService;
 
 import javax.ws.rs.*;
@@ -17,14 +18,22 @@ public class MatriculaResource {
     private MatriculaService matriculaService = new MatriculaService();
 
     @GET
-    public Response listar(@QueryParam("idAluno") Long idAluno) {
-        List<Matricula> matriculas;
+    public Response listar(@QueryParam("idAluno") Long idAluno,
+                           @QueryParam("page") @DefaultValue("0") int page,
+                           @QueryParam("size") @DefaultValue("10") int size) {
+        page = Math.max(0, page);
+        size = Math.max(1, Math.min(size, 10000));
+
+        long total;
+        List<Matricula> content;
         if (idAluno != null) {
-            matriculas = matriculaService.buscarPorAluno(idAluno);
+            total = matriculaService.contarPorAluno(idAluno);
+            content = matriculaService.buscarPorAlunoPaginado(idAluno, page, size);
         } else {
-            matriculas = matriculaService.listarTodos();
+            total = matriculaService.contarTodos();
+            content = matriculaService.listarPaginado(page, size);
         }
-        return Response.ok(matriculas).build();
+        return Response.ok(new PageResponse<>(content, total, page, size)).build();
     }
 
     @POST

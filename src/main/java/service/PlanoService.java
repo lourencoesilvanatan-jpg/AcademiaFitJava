@@ -34,6 +34,10 @@ public class PlanoService {
         return planoDAO.buscarTodos();
     }
 
+    public List<Plano> listarPaginado(int page, int size) {
+        return planoDAO.buscarPaginado(page, size, "idPlano");
+    }
+
     public long contarTodos() {
         return planoDAO.contarTodos();
     }

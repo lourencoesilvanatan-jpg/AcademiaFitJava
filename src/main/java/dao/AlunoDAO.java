@@ -16,9 +16,35 @@ public class AlunoDAO extends GenericDAO<Aluno> {
         EntityManager em = JPAUtil.getEntityManager();
         try {
             return em.createQuery(
-                    "SELECT a FROM Aluno a WHERE LOWER(a.nome) LIKE :nome", Aluno.class)
+                    "SELECT a FROM Aluno a WHERE LOWER(a.nome) LIKE :nome ORDER BY a.idAluno", Aluno.class)
                     .setParameter("nome", "%" + nome.toLowerCase() + "%")
                     .getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    public List<Aluno> buscarPorNomePaginado(String nome, int pagina, int tamanhoPagina) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            return em.createQuery(
+                    "SELECT a FROM Aluno a WHERE LOWER(a.nome) LIKE :nome ORDER BY a.idAluno", Aluno.class)
+                    .setParameter("nome", "%" + nome.toLowerCase() + "%")
+                    .setFirstResult(pagina * tamanhoPagina)
+                    .setMaxResults(tamanhoPagina)
+                    .getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    public long contarPorNome(String nome) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            return em.createQuery(
+                    "SELECT COUNT(a) FROM Aluno a WHERE LOWER(a.nome) LIKE :nome", Long.class)
+                    .setParameter("nome", "%" + nome.toLowerCase() + "%")
+                    .getSingleResult();
         } finally {
             em.close();
         }

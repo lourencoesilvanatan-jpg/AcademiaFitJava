@@ -6,7 +6,7 @@ import Loading from '../components/Loading';
 import { maskCPF, maskPhone, validateCPF } from '../utils/masks';
 
 const EMPTY = { nome: '', cpf: '', email: '', telefone: '', dataNascimento: '' };
-const PER_PAGE = 10;
+const PAGE_SIZE = 10;
 
 export default function Alunos() {
   const [alunos, setAlunos] = useState([]);
@@ -17,18 +17,25 @@ export default function Alunos() {
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [errors, setErrors] = useState({});
 
   const carregar = useCallback(() => {
     setLoading(true);
-    const params = filtro ? { nome: filtro } : {};
+    const params = { page, size: PAGE_SIZE };
+    if (filtro) params.nome = filtro;
     api.get('/alunos', { params })
-      .then((r) => setAlunos(r.data))
+      .then((r) => {
+        setAlunos(r.data.content || []);
+        setTotalPages(r.data.totalPages || 0);
+      })
       .catch(() => setToast({ msg: 'Erro ao carregar alunos', type: 'error' }))
       .finally(() => setLoading(false));
-  }, [filtro]);
+  }, [page, filtro]);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  const onFiltroChange = (e) => { setFiltro(e.target.value); setPage(0); };
 
   const validar = () => {
     const errs = {};
@@ -75,15 +82,13 @@ export default function Alunos() {
     try {
       await api.delete(`/alunos/${id}`);
       setToast({ msg: 'Aluno excluido!', type: 'success' });
-      carregar();
+      if (alunos.length === 1 && page > 0) setPage(page - 1);
+      else carregar();
     } catch (err) {
       setToast({ msg: err.response?.data?.erro || 'Erro ao excluir', type: 'error' });
     }
     setConfirm(null);
   };
-
-  const totalPages = Math.ceil(alunos.length / PER_PAGE);
-  const paginados = alunos.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
 
   return (
     <>
@@ -96,8 +101,7 @@ export default function Alunos() {
         <h3>Alunos</h3>
         <div className="toolbar">
           <input type="text" placeholder="Buscar por nome..." value={filtro}
-                 onChange={(e) => setFiltro(e.target.value)} />
-          <button className="btn btn-search" onClick={carregar}>Pesquisar</button>
+                 onChange={onFiltroChange} />
         </div>
         {loading ? <Loading /> : (
           <>
@@ -108,8 +112,8 @@ export default function Alunos() {
                 </tr>
               </thead>
               <tbody>
-                {paginados.length === 0 && <tr><td colSpan="6" className="empty">Nenhum aluno encontrado.</td></tr>}
-                {paginados.map((a) => (
+                {alunos.length === 0 && <tr><td colSpan="6" className="empty">Nenhum aluno encontrado.</td></tr>}
+                {alunos.map((a) => (
                   <tr key={a.idAluno}>
                     <td>{a.nome}</td>
                     <td>{a.cpf}</td>

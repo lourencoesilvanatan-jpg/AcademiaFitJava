@@ -2,6 +2,7 @@ package rest;
 
 import model.Plano;
 import rest.dto.ErrorResponse;
+import rest.dto.PageResponse;
 import service.PlanoService;
 
 import javax.ws.rs.*;
@@ -17,9 +18,13 @@ public class PlanoResource {
     private PlanoService planoService = new PlanoService();
 
     @GET
-    public Response listar() {
-        List<Plano> planos = planoService.listarTodos();
-        return Response.ok(planos).build();
+    public Response listar(@QueryParam("page") @DefaultValue("0") int page,
+                           @QueryParam("size") @DefaultValue("10") int size) {
+        page = Math.max(0, page);
+        size = Math.max(1, Math.min(size, 10000));
+        long total = planoService.contarTodos();
+        List<Plano> content = planoService.listarPaginado(page, size);
+        return Response.ok(new PageResponse<>(content, total, page, size)).build();
     }
 
     @GET

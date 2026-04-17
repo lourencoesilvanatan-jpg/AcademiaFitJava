@@ -4,6 +4,7 @@ import Toast from '../components/Toast';
 import Loading from '../components/Loading';
 
 const EMPTY = { nome: '', login: '', senha: '' };
+const PAGE_SIZE = 10;
 
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);
@@ -11,14 +12,19 @@ export default function Usuarios() {
   const [editId, setEditId] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const carregar = useCallback(() => {
     setLoading(true);
-    api.get('/usuarios')
-      .then((r) => setUsuarios(r.data))
+    api.get('/usuarios', { params: { page, size: PAGE_SIZE } })
+      .then((r) => {
+        setUsuarios(r.data.content || []);
+        setTotalPages(r.data.totalPages || 0);
+      })
       .catch(() => setToast({ msg: 'Erro ao carregar usuarios', type: 'error' }))
       .finally(() => setLoading(false));
-  }, []);
+  }, [page]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -66,29 +72,38 @@ export default function Usuarios() {
       <div className="card">
         <h3>Usuarios</h3>
         {loading ? <Loading /> : (
-          <table className="data-table">
-            <thead><tr><th>Nome</th><th>Login</th><th>Status</th><th>Acoes</th></tr></thead>
-            <tbody>
-              {usuarios.length === 0 && <tr><td colSpan="4" className="empty">Nenhum usuario cadastrado.</td></tr>}
-              {usuarios.map((u) => (
-                <tr key={u.idUsuario}>
-                  <td>{u.nome}</td>
-                  <td>{u.login}</td>
-                  <td>
-                    <span className={`status-badge ${u.ativo ? 'status-ATIVA' : 'status-CANCELADA'}`}>
-                      {u.ativo ? 'Ativo' : 'Inativo'}
-                    </span>
-                  </td>
-                  <td className="actions">
-                    <button className="link-edit" onClick={() => editar(u)}>Editar</button>
-                    <button className="link-delete" onClick={() => toggleAtivo(u.idUsuario)}>
-                      {u.ativo ? 'Desativar' : 'Ativar'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <>
+            <table className="data-table">
+              <thead><tr><th>Nome</th><th>Login</th><th>Status</th><th>Acoes</th></tr></thead>
+              <tbody>
+                {usuarios.length === 0 && <tr><td colSpan="4" className="empty">Nenhum usuario cadastrado.</td></tr>}
+                {usuarios.map((u) => (
+                  <tr key={u.idUsuario}>
+                    <td>{u.nome}</td>
+                    <td>{u.login}</td>
+                    <td>
+                      <span className={`status-badge ${u.ativo ? 'status-ATIVA' : 'status-CANCELADA'}`}>
+                        {u.ativo ? 'Ativo' : 'Inativo'}
+                      </span>
+                    </td>
+                    <td className="actions">
+                      <button className="link-edit" onClick={() => editar(u)}>Editar</button>
+                      <button className="link-delete" onClick={() => toggleAtivo(u.idUsuario)}>
+                        {u.ativo ? 'Desativar' : 'Ativar'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {totalPages > 1 && (
+              <div className="pagination">
+                <button className="btn-page" disabled={page === 0} onClick={() => setPage(page - 1)}>Anterior</button>
+                <span className="page-info">Pagina {page + 1} de {totalPages}</span>
+                <button className="btn-page" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}>Proxima</button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

@@ -40,6 +40,18 @@ public class MatriculaService {
         return matriculaDAO.buscarPorAluno(idAluno);
     }
 
+    public List<Matricula> listarPaginado(int page, int size) {
+        return matriculaDAO.buscarPaginado(page, size, "idMatricula");
+    }
+
+    public List<Matricula> buscarPorAlunoPaginado(Long idAluno, int page, int size) {
+        return matriculaDAO.buscarPorAlunoPaginado(idAluno, page, size);
+    }
+
+    public long contarPorAluno(Long idAluno) {
+        return matriculaDAO.contarPorAluno(idAluno);
+    }
+
     public long contarPorStatus(StatusMatricula status) {
         return matriculaDAO.contarPorStatus(status);
     }

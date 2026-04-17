@@ -5,7 +5,7 @@ import Toast from '../components/Toast';
 import Loading from '../components/Loading';
 
 const EMPTY = { nome: '', valor: '', duracaoDias: '', descricao: '' };
-const PER_PAGE = 10;
+const PAGE_SIZE = 10;
 
 export default function Planos() {
   const [planos, setPlanos] = useState([]);
@@ -15,14 +15,18 @@ export default function Planos() {
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const carregar = useCallback(() => {
     setLoading(true);
-    api.get('/planos')
-      .then((r) => setPlanos(r.data))
+    api.get('/planos', { params: { page, size: PAGE_SIZE } })
+      .then((r) => {
+        setPlanos(r.data.content || []);
+        setTotalPages(r.data.totalPages || 0);
+      })
       .catch(() => setToast({ msg: 'Erro ao carregar planos', type: 'error' }))
       .finally(() => setLoading(false));
-  }, []);
+  }, [page]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -49,13 +53,16 @@ export default function Planos() {
   };
 
   const excluir = async (id) => {
-    try { await api.delete(`/planos/${id}`); setToast({ msg: 'Plano excluido!', type: 'success' }); carregar(); }
-    catch (err) { setToast({ msg: err.response?.data?.erro || 'Erro ao excluir', type: 'error' }); }
+    try {
+      await api.delete(`/planos/${id}`);
+      setToast({ msg: 'Plano excluido!', type: 'success' });
+      if (planos.length === 1 && page > 0) setPage(page - 1);
+      else carregar();
+    } catch (err) {
+      setToast({ msg: err.response?.data?.erro || 'Erro ao excluir', type: 'error' });
+    }
     setConfirm(null);
   };
-
-  const totalPages = Math.ceil(planos.length / PER_PAGE);
-  const paginados = planos.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
 
   return (
     <>
@@ -71,8 +78,8 @@ export default function Planos() {
             <table className="data-table">
               <thead><tr><th>Nome</th><th>Valor</th><th>Duracao</th><th>Descricao</th><th>Acoes</th></tr></thead>
               <tbody>
-                {paginados.length === 0 && <tr><td colSpan="5" className="empty">Nenhum plano cadastrado.</td></tr>}
-                {paginados.map((p) => (
+                {planos.length === 0 && <tr><td colSpan="5" className="empty">Nenhum plano cadastrado.</td></tr>}
+                {planos.map((p) => (
                   <tr key={p.idPlano}>
                     <td>{p.nome}</td>
                     <td>R$ {Number(p.valor).toFixed(2)}</td>

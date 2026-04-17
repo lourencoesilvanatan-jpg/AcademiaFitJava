@@ -30,6 +30,10 @@ public class TreinoService {
         return treinoDAO.buscarTodos();
     }
 
+    public List<Treino> listarPaginado(int page, int size) {
+        return treinoDAO.buscarPaginado(page, size, "idTreino");
+    }
+
     public Treino buscarPorId(Long id) {
         return treinoDAO.buscarPorId(id);
     }

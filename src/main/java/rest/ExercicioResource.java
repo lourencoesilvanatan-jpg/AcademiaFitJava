@@ -3,6 +3,7 @@ package rest;
 import model.Exercicio;
 import model.GrupoMuscular;
 import rest.dto.ErrorResponse;
+import rest.dto.PageResponse;
 import service.ExercicioService;
 
 import javax.ws.rs.*;
@@ -20,9 +21,13 @@ public class ExercicioResource {
     private ExercicioService exercicioService = new ExercicioService();
 
     @GET
-    public Response listar() {
-        List<Exercicio> exercicios = exercicioService.listarTodos();
-        return Response.ok(exercicios).build();
+    public Response listar(@QueryParam("page") @DefaultValue("0") int page,
+                           @QueryParam("size") @DefaultValue("10") int size) {
+        page = Math.max(0, page);
+        size = Math.max(1, Math.min(size, 10000));
+        long total = exercicioService.contarTodos();
+        List<Exercicio> content = exercicioService.listarPaginado(page, size);
+        return Response.ok(new PageResponse<>(content, total, page, size)).build();
     }
 
     @GET

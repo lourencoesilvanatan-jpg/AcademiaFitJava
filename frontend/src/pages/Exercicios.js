@@ -8,7 +8,7 @@ const GRUPOS = ['PEITORAL','COSTAS','OMBROS','BICEPS','TRICEPS','QUADRICEPS','PO
 const GRUPO_LABEL = {PEITORAL:'Peitoral',COSTAS:'Costas',OMBROS:'Ombros',BICEPS:'Biceps',TRICEPS:'Triceps',QUADRICEPS:'Quadriceps',POSTERIOR:'Posterior',GLUTEOS:'Gluteos',PANTURRILHA:'Panturrilha',ABDOMEN:'Abdomen',ANTEBRACO:'Antebraco',TRAPEZIO:'Trapezio',CORPO_INTEIRO:'Corpo Inteiro',CARDIO:'Cardio'};
 
 const EMPTY = { nome: '', grupoMuscular: '', descricao: '' };
-const PER_PAGE = 10;
+const PAGE_SIZE = 10;
 
 export default function Exercicios() {
   const [exercicios, setExercicios] = useState([]);
@@ -18,14 +18,18 @@ export default function Exercicios() {
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const carregar = useCallback(() => {
     setLoading(true);
-    api.get('/exercicios')
-      .then((r) => setExercicios(r.data))
+    api.get('/exercicios', { params: { page, size: PAGE_SIZE } })
+      .then((r) => {
+        setExercicios(r.data.content || []);
+        setTotalPages(r.data.totalPages || 0);
+      })
       .catch(() => setToast({ msg: 'Erro ao carregar exercicios', type: 'error' }))
       .finally(() => setLoading(false));
-  }, []);
+  }, [page]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -52,13 +56,16 @@ export default function Exercicios() {
   };
 
   const excluir = async (id) => {
-    try { await api.delete(`/exercicios/${id}`); setToast({ msg: 'Exercicio excluido!', type: 'success' }); carregar(); }
-    catch (err) { setToast({ msg: err.response?.data?.erro || 'Erro ao excluir', type: 'error' }); }
+    try {
+      await api.delete(`/exercicios/${id}`);
+      setToast({ msg: 'Exercicio excluido!', type: 'success' });
+      if (exercicios.length === 1 && page > 0) setPage(page - 1);
+      else carregar();
+    } catch (err) {
+      setToast({ msg: err.response?.data?.erro || 'Erro ao excluir', type: 'error' });
+    }
     setConfirm(null);
   };
-
-  const totalPages = Math.ceil(exercicios.length / PER_PAGE);
-  const paginados = exercicios.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
 
   return (
     <>
@@ -74,8 +81,8 @@ export default function Exercicios() {
             <table className="data-table">
               <thead><tr><th>Nome</th><th>Grupo Muscular</th><th>Descricao</th><th>Acoes</th></tr></thead>
               <tbody>
-                {paginados.length === 0 && <tr><td colSpan="4" className="empty">Nenhum exercicio cadastrado.</td></tr>}
-                {paginados.map((ex) => (
+                {exercicios.length === 0 && <tr><td colSpan="4" className="empty">Nenhum exercicio cadastrado.</td></tr>}
+                {exercicios.map((ex) => (
                   <tr key={ex.idExercicio}>
                     <td>{ex.nome}</td>
                     <td><span className="badge-grupo">{GRUPO_LABEL[ex.grupoMuscular] || ex.grupoMuscular}</span></td>

@@ -48,6 +48,14 @@ public class UsuarioService {
         return usuarioDAO.buscarTodos();
     }
 
+    public List<Usuario> listarPaginado(int page, int size) {
+        return usuarioDAO.buscarPaginado(page, size, "idUsuario");
+    }
+
+    public long contarTodos() {
+        return usuarioDAO.contarTodos();
+    }
+
     private String hashSenha(String senha) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");

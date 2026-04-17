@@ -8,7 +8,8 @@ const NIVEIS = ['INICIANTE', 'INTERMEDIARIO', 'AVANCADO'];
 const NIVEL_LABEL = { INICIANTE: 'Iniciante', INTERMEDIARIO: 'Intermediario', AVANCADO: 'Avancado' };
 const EMPTY_TREINO = { nome: '', objetivo: '', nivel: '' };
 const EMPTY_TE = { exercicio: '', series: '', repeticoes: '', cargaSugerida: '', descansoSegundos: '', ordem: '' };
-const PER_PAGE = 10;
+const PAGE_SIZE = 10;
+const ALL = 10000;
 
 export default function Treinos() {
   const [treinos, setTreinos] = useState([]);
@@ -21,19 +22,25 @@ export default function Treinos() {
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const carregar = useCallback(() => {
     setLoading(true);
-    api.get('/treinos')
-      .then((r) => setTreinos(r.data))
+    api.get('/treinos', { params: { page, size: PAGE_SIZE } })
+      .then((r) => {
+        setTreinos(r.data.content || []);
+        setTotalPages(r.data.totalPages || 0);
+      })
       .catch(() => setToast({ msg: 'Erro ao carregar treinos', type: 'error' }))
       .finally(() => setLoading(false));
-  }, []);
+  }, [page]);
+
+  useEffect(() => { carregar(); }, [carregar]);
 
   useEffect(() => {
-    carregar();
-    api.get('/exercicios').then((r) => setExerciciosDisponiveis(r.data)).catch(() => {});
-  }, [carregar]);
+    api.get('/exercicios', { params: { page: 0, size: ALL } })
+      .then((r) => setExerciciosDisponiveis(r.data.content || [])).catch(() => {});
+  }, []);
 
   const carregarExercicios = (treinoId) => {
     api.get(`/treinos/${treinoId}/exercicios`).then((r) => setExerciciosDoTreino(r.data)).catch(() => {});
@@ -67,7 +74,9 @@ export default function Treinos() {
     try {
       await api.delete(`/treinos/${id}`);
       setToast({ msg: 'Treino excluido!', type: 'success' });
-      setForm(EMPTY_TREINO); setEditId(null); setExerciciosDoTreino([]); carregar();
+      setForm(EMPTY_TREINO); setEditId(null); setExerciciosDoTreino([]);
+      if (treinos.length === 1 && page > 0) setPage(page - 1);
+      else carregar();
     } catch (err) {
       setToast({ msg: err.response?.data?.erro || 'Erro ao excluir', type: 'error' });
     }
@@ -108,9 +117,6 @@ export default function Treinos() {
     setForm(EMPTY_TREINO); setEditId(null); setExerciciosDoTreino([]); setTeForm(EMPTY_TE);
   };
 
-  const totalPages = Math.ceil(treinos.length / PER_PAGE);
-  const paginados = treinos.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
-
   return (
     <>
       <Toast message={toast?.msg} type={toast?.type} onClose={() => setToast(null)} />
@@ -125,8 +131,8 @@ export default function Treinos() {
             <table className="data-table">
               <thead><tr><th>Nome</th><th>Objetivo</th><th>Nivel</th><th>Acoes</th></tr></thead>
               <tbody>
-                {paginados.length === 0 && <tr><td colSpan="4" className="empty">Nenhum treino cadastrado.</td></tr>}
-                {paginados.map((t) => (
+                {treinos.length === 0 && <tr><td colSpan="4" className="empty">Nenhum treino cadastrado.</td></tr>}
+                {treinos.map((t) => (
                   <tr key={t.idTreino}>
                     <td>{t.nome}</td>
                     <td>{t.objetivo}</td>

@@ -5,6 +5,7 @@ import model.Treino;
 import model.TreinoExercicio;
 import model.TreinoExercicioId;
 import rest.dto.ErrorResponse;
+import rest.dto.PageResponse;
 import service.TreinoExercicioService;
 import service.TreinoService;
 
@@ -24,9 +25,13 @@ public class TreinoResource {
     private TreinoExercicioService teService = new TreinoExercicioService();
 
     @GET
-    public Response listar() {
-        List<Treino> treinos = treinoService.listarTodos();
-        return Response.ok(treinos).build();
+    public Response listar(@QueryParam("page") @DefaultValue("0") int page,
+                           @QueryParam("size") @DefaultValue("10") int size) {
+        page = Math.max(0, page);
+        size = Math.max(1, Math.min(size, 10000));
+        long total = treinoService.contarTodos();
+        List<Treino> content = treinoService.listarPaginado(page, size);
+        return Response.ok(new PageResponse<>(content, total, page, size)).build();
     }
 
     @GET
