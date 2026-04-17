@@ -1,17 +1,17 @@
 package rest.dto;
 
 public class LoginResponse {
-    private String token;
+    private Long idUsuario;
     private String nome;
     private String login;
 
-    public LoginResponse(String token, String nome, String login) {
-        this.token = token;
+    public LoginResponse(Long idUsuario, String nome, String login) {
+        this.idUsuario = idUsuario;
         this.nome = nome;
         this.login = login;
     }
 
-    public String getToken() { return token; }
+    public Long getIdUsuario() { return idUsuario; }
     public String getNome() { return nome; }
     public String getLogin() { return login; }
 }

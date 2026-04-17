@@ -5,7 +5,6 @@ import rest.dto.ErrorResponse;
 import rest.dto.LoginRequest;
 import rest.dto.LoginResponse;
 import service.UsuarioService;
-import util.JwtUtil;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -28,8 +27,7 @@ public class AuthResource {
                         .entity(new ErrorResponse("Login ou senha invalidos"))
                         .build();
             }
-            String token = JwtUtil.gerarToken(usuario.getIdUsuario(), usuario.getNome(), usuario.getLogin());
-            return Response.ok(new LoginResponse(token, usuario.getNome(), usuario.getLogin())).build();
+            return Response.ok(new LoginResponse(usuario.getIdUsuario(), usuario.getNome(), usuario.getLogin())).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(new ErrorResponse("Erro ao autenticar: " + e.getMessage()))
