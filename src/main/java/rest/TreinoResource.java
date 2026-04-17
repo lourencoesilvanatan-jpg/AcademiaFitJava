@@ -8,6 +8,7 @@ import rest.dto.ErrorResponse;
 import rest.dto.PageResponse;
 import service.TreinoExercicioService;
 import service.TreinoService;
+import util.ErrorMessages;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -62,7 +63,7 @@ public class TreinoResource {
             return Response.status(Response.Status.CREATED).entity(salvo).build();
         } catch (Exception e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErrorResponse(e.getMessage())).build();
+                    .entity(new ErrorResponse(ErrorMessages.extract(e))).build();
         }
     }
 
@@ -79,7 +80,7 @@ public class TreinoResource {
             return Response.ok(atualizado).build();
         } catch (Exception e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErrorResponse(e.getMessage())).build();
+                    .entity(new ErrorResponse(ErrorMessages.extract(e))).build();
         }
     }
 
@@ -96,7 +97,7 @@ public class TreinoResource {
             return Response.noContent().build();
         } catch (Exception e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErrorResponse(e.getMessage())).build();
+                    .entity(new ErrorResponse(ErrorMessages.extract(e))).build();
         }
     }
 
@@ -123,7 +124,7 @@ public class TreinoResource {
             return Response.status(Response.Status.CREATED).entity(salvo).build();
         } catch (Exception e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErrorResponse(e.getMessage())).build();
+                    .entity(new ErrorResponse(ErrorMessages.extract(e))).build();
         }
     }
 
@@ -136,7 +137,7 @@ public class TreinoResource {
             return Response.noContent().build();
         } catch (Exception e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErrorResponse(e.getMessage())).build();
+                    .entity(new ErrorResponse(ErrorMessages.extract(e))).build();
         }
     }
 }

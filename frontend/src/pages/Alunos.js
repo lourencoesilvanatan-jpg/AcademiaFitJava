@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api from '../services/api';
 import ConfirmDialog from '../components/ConfirmDialog';
+import FormModal from '../components/FormModal';
 import Toast from '../components/Toast';
 import Loading from '../components/Loading';
 import { maskCPF, maskPhone, validateCPF } from '../utils/masks';
@@ -12,6 +13,7 @@ export default function Alunos() {
   const [alunos, setAlunos] = useState([]);
   const [form, setForm] = useState(EMPTY);
   const [editId, setEditId] = useState(null);
+  const [showForm, setShowForm] = useState(false);
   const [filtro, setFiltro] = useState('');
   const [confirm, setConfirm] = useState(null);
   const [toast, setToast] = useState(null);
@@ -36,6 +38,33 @@ export default function Alunos() {
   useEffect(() => { carregar(); }, [carregar]);
 
   const onFiltroChange = (e) => { setFiltro(e.target.value); setPage(0); };
+
+  const abrirNovo = () => {
+    setForm(EMPTY);
+    setEditId(null);
+    setErrors({});
+    setShowForm(true);
+  };
+
+  const abrirEdicao = (a) => {
+    setForm({
+      nome: a.nome,
+      cpf: a.cpf,
+      email: a.email || '',
+      telefone: a.telefone || '',
+      dataNascimento: a.dataNascimento || ''
+    });
+    setEditId(a.idAluno);
+    setErrors({});
+    setShowForm(true);
+  };
+
+  const fecharModal = () => {
+    setShowForm(false);
+    setForm(EMPTY);
+    setEditId(null);
+    setErrors({});
+  };
 
   const validar = () => {
     const errs = {};
@@ -63,19 +92,11 @@ export default function Alunos() {
         await api.post('/alunos', form);
         setToast({ msg: 'Aluno cadastrado!', type: 'success' });
       }
-      setForm(EMPTY);
-      setEditId(null);
-      setErrors({});
+      fecharModal();
       carregar();
     } catch (err) {
       setToast({ msg: err.response?.data?.erro || 'Erro ao salvar', type: 'error' });
     }
-  };
-
-  const editar = (a) => {
-    setForm({ nome: a.nome, cpf: a.cpf, email: a.email || '', telefone: a.telefone || '', dataNascimento: a.dataNascimento || '' });
-    setEditId(a.idAluno);
-    setErrors({});
   };
 
   const excluir = async (id) => {
@@ -102,6 +123,8 @@ export default function Alunos() {
         <div className="toolbar">
           <input type="text" placeholder="Buscar por nome..." value={filtro}
                  onChange={onFiltroChange} />
+          <div className="toolbar-spacer" />
+          <button className="btn btn-save" onClick={abrirNovo}>+ Novo Aluno</button>
         </div>
         {loading ? <Loading /> : (
           <>
@@ -121,7 +144,7 @@ export default function Alunos() {
                     <td>{a.telefone}</td>
                     <td>{a.dataNascimento}</td>
                     <td className="actions">
-                      <button className="link-edit" onClick={() => editar(a)}>Editar</button>
+                      <button className="link-edit" onClick={() => abrirEdicao(a)}>Editar</button>
                       <button className="link-delete" onClick={() => setConfirm(a.idAluno)}>Excluir</button>
                     </td>
                   </tr>
@@ -139,30 +162,37 @@ export default function Alunos() {
         )}
       </div>
 
-      <div className="card">
-        <h3>{editId ? 'Editar Aluno' : 'Cadastro de Aluno'}</h3>
+      <FormModal show={showForm} title={editId ? 'Editar Aluno' : 'Novo Aluno'}
+                 onClose={fecharModal} size="lg">
         <form className="form-grid" onSubmit={salvar}>
           <label>Nome</label>
-          <input type="text" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Nome completo" />
+          <input type="text" value={form.nome}
+                 onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                 placeholder="Nome completo" autoFocus />
           {errors.nome && <span className="field-error">{errors.nome}</span>}
           <label>CPF</label>
           <input type="text" value={form.cpf} maxLength={14}
-            onChange={(e) => setForm({ ...form, cpf: maskCPF(e.target.value) })} placeholder="999.999.999-99" />
+                 onChange={(e) => setForm({ ...form, cpf: maskCPF(e.target.value) })}
+                 placeholder="999.999.999-99" />
           {errors.cpf && <span className="field-error">{errors.cpf}</span>}
           <label>E-mail</label>
-          <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@exemplo.com" />
+          <input type="email" value={form.email}
+                 onChange={(e) => setForm({ ...form, email: e.target.value })}
+                 placeholder="email@exemplo.com" />
           {errors.email && <span className="field-error">{errors.email}</span>}
           <label>Telefone</label>
           <input type="text" value={form.telefone} maxLength={15}
-            onChange={(e) => setForm({ ...form, telefone: maskPhone(e.target.value) })} placeholder="(99) 99999-9999" />
+                 onChange={(e) => setForm({ ...form, telefone: maskPhone(e.target.value) })}
+                 placeholder="(99) 99999-9999" />
           <label>Nascimento</label>
-          <input type="date" value={form.dataNascimento} onChange={(e) => setForm({ ...form, dataNascimento: e.target.value })} />
-          <div className="btn-group">
+          <input type="date" value={form.dataNascimento}
+                 onChange={(e) => setForm({ ...form, dataNascimento: e.target.value })} />
+          <div className="btn-group modal-actions">
+            <button type="button" className="btn btn-cancel" onClick={fecharModal}>Cancelar</button>
             <button type="submit" className="btn btn-save">{editId ? 'Atualizar' : 'Salvar'}</button>
-            <button type="button" className="btn btn-cancel" onClick={() => { setForm(EMPTY); setEditId(null); setErrors({}); }}>Limpar</button>
           </div>
         </form>
-      </div>
+      </FormModal>
     </>
   );
 }

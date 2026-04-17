@@ -4,6 +4,7 @@ import model.Plano;
 import rest.dto.ErrorResponse;
 import rest.dto.PageResponse;
 import service.PlanoService;
+import util.ErrorMessages;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -46,7 +47,7 @@ public class PlanoResource {
             return Response.status(Response.Status.CREATED).entity(salvo).build();
         } catch (Exception e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErrorResponse(e.getMessage())).build();
+                    .entity(new ErrorResponse(ErrorMessages.extract(e))).build();
         }
     }
 
@@ -63,7 +64,7 @@ public class PlanoResource {
             return Response.ok(atualizado).build();
         } catch (Exception e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErrorResponse(e.getMessage())).build();
+                    .entity(new ErrorResponse(ErrorMessages.extract(e))).build();
         }
     }
 
@@ -80,7 +81,7 @@ public class PlanoResource {
             return Response.noContent().build();
         } catch (Exception e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErrorResponse(e.getMessage())).build();
+                    .entity(new ErrorResponse(ErrorMessages.extract(e))).build();
         }
     }
 }

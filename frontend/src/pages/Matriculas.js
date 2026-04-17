@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api from '../services/api';
 import ConfirmDialog from '../components/ConfirmDialog';
+import FormModal from '../components/FormModal';
 import Toast from '../components/Toast';
 import Loading from '../components/Loading';
 
@@ -16,6 +17,7 @@ export default function Matriculas() {
   const [planos, setPlanos] = useState([]);
   const [form, setForm] = useState(EMPTY);
   const [editId, setEditId] = useState(null);
+  const [showForm, setShowForm] = useState(false);
   const [confirm, setConfirm] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -42,6 +44,17 @@ export default function Matriculas() {
       .then((r) => setPlanos(r.data.content || [])).catch(() => {});
   }, []);
 
+  const abrirNovo = () => { setForm(EMPTY); setEditId(null); setShowForm(true); };
+  const abrirEdicao = (m) => {
+    setForm({
+      aluno: m.aluno?.idAluno || '', plano: m.plano?.idPlano || '',
+      dataInicio: m.dataInicio || '', dataFim: m.dataFim || '', status: m.status || 'ATIVA',
+    });
+    setEditId(m.idMatricula);
+    setShowForm(true);
+  };
+  const fecharModal = () => { setShowForm(false); setForm(EMPTY); setEditId(null); };
+
   const salvar = async (e) => {
     e.preventDefault();
     try {
@@ -59,18 +72,11 @@ export default function Matriculas() {
         await api.post('/matriculas', payload);
         setToast({ msg: 'Matricula cadastrada!', type: 'success' });
       }
-      setForm(EMPTY); setEditId(null); carregar();
+      fecharModal();
+      carregar();
     } catch (err) {
       setToast({ msg: err.response?.data?.erro || 'Erro ao salvar', type: 'error' });
     }
-  };
-
-  const editar = (m) => {
-    setForm({
-      aluno: m.aluno?.idAluno || '', plano: m.plano?.idPlano || '',
-      dataInicio: m.dataInicio || '', dataFim: m.dataFim || '', status: m.status || 'ATIVA',
-    });
-    setEditId(m.idMatricula);
   };
 
   const excluir = async (id) => {
@@ -94,6 +100,10 @@ export default function Matriculas() {
 
       <div className="card">
         <h3>Matriculas</h3>
+        <div className="toolbar">
+          <div className="toolbar-spacer" />
+          <button className="btn btn-save" onClick={abrirNovo}>+ Nova Matricula</button>
+        </div>
         {loading ? <Loading /> : (
           <>
             <table className="data-table">
@@ -108,7 +118,7 @@ export default function Matriculas() {
                     <td>{m.dataFim}</td>
                     <td><span className={`status-badge status-${m.status}`}>{STATUS_LABEL[m.status] || m.status}</span></td>
                     <td className="actions">
-                      <button className="link-edit" onClick={() => editar(m)}>Editar</button>
+                      <button className="link-edit" onClick={() => abrirEdicao(m)}>Editar</button>
                       <button className="link-delete" onClick={() => setConfirm(m.idMatricula)}>Excluir</button>
                     </td>
                   </tr>
@@ -126,11 +136,11 @@ export default function Matriculas() {
         )}
       </div>
 
-      <div className="card">
-        <h3>{editId ? 'Editar Matricula' : 'Cadastro de Matricula'}</h3>
+      <FormModal show={showForm} title={editId ? 'Editar Matricula' : 'Nova Matricula'}
+                 onClose={fecharModal} size="lg">
         <form className="form-grid" onSubmit={salvar}>
           <label>Aluno</label>
-          <select value={form.aluno} onChange={(e) => setForm({ ...form, aluno: e.target.value })} required>
+          <select value={form.aluno} onChange={(e) => setForm({ ...form, aluno: e.target.value })} required autoFocus>
             <option value="">-- Selecione --</option>
             {alunos.map((a) => <option key={a.idAluno} value={a.idAluno}>{a.nome}</option>)}
           </select>
@@ -147,12 +157,12 @@ export default function Matriculas() {
           <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
             {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
           </select>
-          <div className="btn-group">
+          <div className="btn-group modal-actions">
+            <button type="button" className="btn btn-cancel" onClick={fecharModal}>Cancelar</button>
             <button type="submit" className="btn btn-save">{editId ? 'Atualizar' : 'Salvar'}</button>
-            <button type="button" className="btn btn-cancel" onClick={() => { setForm(EMPTY); setEditId(null); }}>Limpar</button>
           </div>
         </form>
-      </div>
+      </FormModal>
     </>
   );
 }

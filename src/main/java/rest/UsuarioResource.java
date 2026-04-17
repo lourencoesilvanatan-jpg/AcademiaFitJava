@@ -4,6 +4,7 @@ import model.Usuario;
 import rest.dto.ErrorResponse;
 import rest.dto.PageResponse;
 import service.UsuarioService;
+import util.ErrorMessages;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -65,7 +66,7 @@ public class UsuarioResource {
 
             return Response.status(Response.Status.CREATED).entity(result).build();
         } catch (Exception e) {
-            String msg = e.getMessage();
+            String msg = ErrorMessages.extract(e);
             if (msg != null && msg.toLowerCase().contains("duplicate")) {
                 msg = "Login ja esta em uso";
             }
@@ -114,7 +115,7 @@ public class UsuarioResource {
                 return Response.ok(result).build();
             }
         } catch (Exception e) {
-            String msg = e.getMessage();
+            String msg = ErrorMessages.extract(e);
             if (msg != null && msg.toLowerCase().contains("duplicate")) {
                 msg = "Login ja esta em uso";
             }
@@ -147,7 +148,7 @@ public class UsuarioResource {
             return Response.ok(result).build();
         } catch (Exception e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErrorResponse(e.getMessage())).build();
+                    .entity(new ErrorResponse(ErrorMessages.extract(e))).build();
         }
     }
 }

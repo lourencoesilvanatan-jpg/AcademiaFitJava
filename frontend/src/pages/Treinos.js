@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api from '../services/api';
 import ConfirmDialog from '../components/ConfirmDialog';
+import FormModal from '../components/FormModal';
 import Toast from '../components/Toast';
 import Loading from '../components/Loading';
 
@@ -18,6 +19,9 @@ export default function Treinos() {
   const [form, setForm] = useState(EMPTY_TREINO);
   const [teForm, setTeForm] = useState(EMPTY_TE);
   const [editId, setEditId] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [gerenciarId, setGerenciarId] = useState(null);
+  const [gerenciarNome, setGerenciarNome] = useState('');
   const [confirm, setConfirm] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -46,6 +50,28 @@ export default function Treinos() {
     api.get(`/treinos/${treinoId}/exercicios`).then((r) => setExerciciosDoTreino(r.data)).catch(() => {});
   };
 
+  const abrirNovo = () => { setForm(EMPTY_TREINO); setEditId(null); setShowForm(true); };
+  const abrirEdicao = (t) => {
+    setForm({ nome: t.nome, objetivo: t.objetivo || '', nivel: t.nivel || '' });
+    setEditId(t.idTreino);
+    setShowForm(true);
+  };
+  const fecharModal = () => { setShowForm(false); setForm(EMPTY_TREINO); setEditId(null); };
+
+  const gerenciarExercicios = (t) => {
+    setGerenciarId(t.idTreino);
+    setGerenciarNome(t.nome);
+    setTeForm(EMPTY_TE);
+    carregarExercicios(t.idTreino);
+  };
+
+  const fecharGerenciamento = () => {
+    setGerenciarId(null);
+    setGerenciarNome('');
+    setExerciciosDoTreino([]);
+    setTeForm(EMPTY_TE);
+  };
+
   const salvar = async (e) => {
     e.preventDefault();
     try {
@@ -53,10 +79,15 @@ export default function Treinos() {
       if (editId) {
         await api.put(`/treinos/${editId}`, payload);
         setToast({ msg: 'Treino atualizado!', type: 'success' });
+        fecharModal();
       } else {
         const res = await api.post('/treinos', payload);
-        setEditId(res.data.idTreino);
-        setToast({ msg: 'Treino cadastrado! Agora adicione exercicios.', type: 'success' });
+        setToast({ msg: 'Treino cadastrado! Adicione os exercicios abaixo.', type: 'success' });
+        fecharModal();
+        setGerenciarId(res.data.idTreino);
+        setGerenciarNome(res.data.nome);
+        setExerciciosDoTreino([]);
+        setTeForm(EMPTY_TE);
       }
       carregar();
     } catch (err) {
@@ -64,17 +95,11 @@ export default function Treinos() {
     }
   };
 
-  const editar = (t) => {
-    setForm({ nome: t.nome, objetivo: t.objetivo || '', nivel: t.nivel || '' });
-    setEditId(t.idTreino);
-    carregarExercicios(t.idTreino);
-  };
-
   const excluir = async (id) => {
     try {
       await api.delete(`/treinos/${id}`);
       setToast({ msg: 'Treino excluido!', type: 'success' });
-      setForm(EMPTY_TREINO); setEditId(null); setExerciciosDoTreino([]);
+      if (gerenciarId === id) fecharGerenciamento();
       if (treinos.length === 1 && page > 0) setPage(page - 1);
       else carregar();
     } catch (err) {
@@ -87,7 +112,7 @@ export default function Treinos() {
     if (!teForm.exercicio) { setToast({ msg: 'Selecione um exercicio', type: 'error' }); return; }
     try {
       const exObj = exerciciosDisponiveis.find((e) => String(e.idExercicio) === String(teForm.exercicio));
-      await api.post(`/treinos/${editId}/exercicios`, {
+      await api.post(`/treinos/${gerenciarId}/exercicios`, {
         exercicio: exObj,
         series: parseInt(teForm.series) || 3,
         repeticoes: parseInt(teForm.repeticoes) || 12,
@@ -96,7 +121,7 @@ export default function Treinos() {
         ordem: parseInt(teForm.ordem) || null,
       });
       setTeForm(EMPTY_TE);
-      carregarExercicios(editId);
+      carregarExercicios(gerenciarId);
       setToast({ msg: 'Exercicio adicionado!', type: 'success' });
     } catch (err) {
       setToast({ msg: err.response?.data?.erro || 'Erro ao adicionar', type: 'error' });
@@ -105,16 +130,12 @@ export default function Treinos() {
 
   const removerExercicio = async (idExercicio) => {
     try {
-      await api.delete(`/treinos/${editId}/exercicios/${idExercicio}`);
-      carregarExercicios(editId);
+      await api.delete(`/treinos/${gerenciarId}/exercicios/${idExercicio}`);
+      carregarExercicios(gerenciarId);
       setToast({ msg: 'Exercicio removido!', type: 'success' });
     } catch (err) {
       setToast({ msg: err.response?.data?.erro || 'Erro ao remover', type: 'error' });
     }
-  };
-
-  const novoTreino = () => {
-    setForm(EMPTY_TREINO); setEditId(null); setExerciciosDoTreino([]); setTeForm(EMPTY_TE);
   };
 
   return (
@@ -126,6 +147,10 @@ export default function Treinos() {
 
       <div className="card">
         <h3>Treinos</h3>
+        <div className="toolbar">
+          <div className="toolbar-spacer" />
+          <button className="btn btn-save" onClick={abrirNovo}>+ Novo Treino</button>
+        </div>
         {loading ? <Loading /> : (
           <>
             <table className="data-table">
@@ -138,7 +163,8 @@ export default function Treinos() {
                     <td>{t.objetivo}</td>
                     <td><span className={`badge-nivel badge-nivel-${t.nivel || ''}`}>{NIVEL_LABEL[t.nivel] || ''}</span></td>
                     <td className="actions">
-                      <button className="link-edit" onClick={() => editar(t)}>Editar</button>
+                      <button className="link-edit" onClick={() => abrirEdicao(t)}>Editar</button>
+                      <button className="link-edit" onClick={() => gerenciarExercicios(t)}>Exercicios</button>
                       <button className="link-delete" onClick={() => setConfirm(t.idTreino)}>Excluir</button>
                     </td>
                   </tr>
@@ -156,28 +182,13 @@ export default function Treinos() {
         )}
       </div>
 
-      <div className="card">
-        <h3>{editId ? 'Editar Treino' : 'Cadastro de Treino'}</h3>
-        <form className="form-grid" onSubmit={salvar}>
-          <label>Nome</label>
-          <input type="text" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required placeholder="Ex: Treino A - Peito" />
-          <label>Objetivo</label>
-          <input type="text" value={form.objetivo} onChange={(e) => setForm({ ...form, objetivo: e.target.value })} placeholder="Ex: Hipertrofia" />
-          <label>Nivel</label>
-          <select value={form.nivel} onChange={(e) => setForm({ ...form, nivel: e.target.value })}>
-            <option value="">-- Selecione --</option>
-            {NIVEIS.map((n) => <option key={n} value={n}>{NIVEL_LABEL[n]}</option>)}
-          </select>
-          <div className="btn-group">
-            <button type="submit" className="btn btn-save">{editId ? 'Atualizar' : 'Salvar'}</button>
-            <button type="button" className="btn btn-cancel" onClick={novoTreino}>Limpar</button>
-          </div>
-        </form>
-      </div>
-
-      {editId && (
+      {gerenciarId && (
         <div className="card">
-          <h3>Exercicios do Treino</h3>
+          <div className="toolbar">
+            <h3 style={{margin: 0, padding: 0, border: 'none'}}>Exercicios - {gerenciarNome}</h3>
+            <div className="toolbar-spacer" />
+            <button className="btn btn-cancel" onClick={fecharGerenciamento}>Fechar</button>
+          </div>
           <div className="exercicio-form-grid">
             <div className="exercicio-form-item">
               <label>Exercicio:</label>
@@ -232,6 +243,25 @@ export default function Treinos() {
           </table>
         </div>
       )}
+
+      <FormModal show={showForm} title={editId ? 'Editar Treino' : 'Novo Treino'}
+                 onClose={fecharModal} size="lg">
+        <form className="form-grid" onSubmit={salvar}>
+          <label>Nome</label>
+          <input type="text" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required placeholder="Ex: Treino A - Peito" autoFocus />
+          <label>Objetivo</label>
+          <input type="text" value={form.objetivo} onChange={(e) => setForm({ ...form, objetivo: e.target.value })} placeholder="Ex: Hipertrofia" />
+          <label>Nivel</label>
+          <select value={form.nivel} onChange={(e) => setForm({ ...form, nivel: e.target.value })}>
+            <option value="">-- Selecione --</option>
+            {NIVEIS.map((n) => <option key={n} value={n}>{NIVEL_LABEL[n]}</option>)}
+          </select>
+          <div className="btn-group modal-actions">
+            <button type="button" className="btn btn-cancel" onClick={fecharModal}>Cancelar</button>
+            <button type="submit" className="btn btn-save">{editId ? 'Atualizar' : 'Salvar'}</button>
+          </div>
+        </form>
+      </FormModal>
     </>
   );
 }

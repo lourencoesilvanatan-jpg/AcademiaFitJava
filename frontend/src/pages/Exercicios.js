@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api from '../services/api';
 import ConfirmDialog from '../components/ConfirmDialog';
+import FormModal from '../components/FormModal';
 import Toast from '../components/Toast';
 import Loading from '../components/Loading';
 
@@ -14,6 +15,7 @@ export default function Exercicios() {
   const [exercicios, setExercicios] = useState([]);
   const [form, setForm] = useState(EMPTY);
   const [editId, setEditId] = useState(null);
+  const [showForm, setShowForm] = useState(false);
   const [confirm, setConfirm] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -33,6 +35,14 @@ export default function Exercicios() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
+  const abrirNovo = () => { setForm(EMPTY); setEditId(null); setShowForm(true); };
+  const abrirEdicao = (ex) => {
+    setForm({ nome: ex.nome, grupoMuscular: ex.grupoMuscular || '', descricao: ex.descricao || '' });
+    setEditId(ex.idExercicio);
+    setShowForm(true);
+  };
+  const fecharModal = () => { setShowForm(false); setForm(EMPTY); setEditId(null); };
+
   const salvar = async (e) => {
     e.preventDefault();
     try {
@@ -44,15 +54,11 @@ export default function Exercicios() {
         await api.post('/exercicios', payload);
         setToast({ msg: 'Exercicio cadastrado!', type: 'success' });
       }
-      setForm(EMPTY); setEditId(null); carregar();
+      fecharModal();
+      carregar();
     } catch (err) {
       setToast({ msg: err.response?.data?.erro || 'Erro ao salvar', type: 'error' });
     }
-  };
-
-  const editar = (ex) => {
-    setForm({ nome: ex.nome, grupoMuscular: ex.grupoMuscular || '', descricao: ex.descricao || '' });
-    setEditId(ex.idExercicio);
   };
 
   const excluir = async (id) => {
@@ -76,6 +82,10 @@ export default function Exercicios() {
 
       <div className="card">
         <h3>Exercicios</h3>
+        <div className="toolbar">
+          <div className="toolbar-spacer" />
+          <button className="btn btn-save" onClick={abrirNovo}>+ Novo Exercicio</button>
+        </div>
         {loading ? <Loading /> : (
           <>
             <table className="data-table">
@@ -88,7 +98,7 @@ export default function Exercicios() {
                     <td><span className="badge-grupo">{GRUPO_LABEL[ex.grupoMuscular] || ex.grupoMuscular}</span></td>
                     <td>{ex.descricao}</td>
                     <td className="actions">
-                      <button className="link-edit" onClick={() => editar(ex)}>Editar</button>
+                      <button className="link-edit" onClick={() => abrirEdicao(ex)}>Editar</button>
                       <button className="link-delete" onClick={() => setConfirm(ex.idExercicio)}>Excluir</button>
                     </td>
                   </tr>
@@ -106,11 +116,11 @@ export default function Exercicios() {
         )}
       </div>
 
-      <div className="card">
-        <h3>{editId ? 'Editar Exercicio' : 'Cadastro de Exercicio'}</h3>
+      <FormModal show={showForm} title={editId ? 'Editar Exercicio' : 'Novo Exercicio'}
+                 onClose={fecharModal} size="lg">
         <form className="form-grid" onSubmit={salvar}>
           <label>Nome</label>
-          <input type="text" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required placeholder="Ex: Supino Reto" />
+          <input type="text" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required placeholder="Ex: Supino Reto" autoFocus />
           <label>Grupo Muscular</label>
           <select value={form.grupoMuscular} onChange={(e) => setForm({ ...form, grupoMuscular: e.target.value })}>
             <option value="">-- Selecione --</option>
@@ -118,12 +128,12 @@ export default function Exercicios() {
           </select>
           <label>Descricao</label>
           <textarea value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} rows="3" placeholder="Descricao do exercicio..." />
-          <div className="btn-group">
+          <div className="btn-group modal-actions">
+            <button type="button" className="btn btn-cancel" onClick={fecharModal}>Cancelar</button>
             <button type="submit" className="btn btn-save">{editId ? 'Atualizar' : 'Salvar'}</button>
-            <button type="button" className="btn btn-cancel" onClick={() => { setForm(EMPTY); setEditId(null); }}>Limpar</button>
           </div>
         </form>
-      </div>
+      </FormModal>
     </>
   );
 }
