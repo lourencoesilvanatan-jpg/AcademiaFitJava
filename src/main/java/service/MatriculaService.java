@@ -75,4 +75,8 @@ public class MatriculaService {
     public long contarPorAlunoNome(String nome) {
         return matriculaDAO.contarPorAlunoNome(nome);
     }
+
+    public int marcarExpiradas() {
+        return matriculaDAO.marcarExpiradas();
+    }
 }

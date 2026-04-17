@@ -120,4 +120,14 @@ public class MatriculaDAO extends GenericDAO<Matricula> {
             em.close();
         }
     }
+
+    public int marcarExpiradas() {
+        return executarDentroTransacaoComRetorno(em -> em.createQuery(
+                "UPDATE Matricula m SET m.status = :expirada "
+                + "WHERE m.status = :ativa AND m.dataFim IS NOT NULL AND m.dataFim < :hoje")
+                .setParameter("expirada", StatusMatricula.EXPIRADA)
+                .setParameter("ativa", StatusMatricula.ATIVA)
+                .setParameter("hoje", LocalDate.now())
+                .executeUpdate());
+    }
 }
