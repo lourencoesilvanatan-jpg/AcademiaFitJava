@@ -59,4 +59,20 @@ public class MatriculaService {
     public long contarTodos() {
         return matriculaDAO.contarTodos();
     }
+
+    public List<Matricula> buscarUltimas(int limite) {
+        return matriculaDAO.buscarUltimas(limite);
+    }
+
+    public List<Matricula> buscarProximosVencimentos(int dias) {
+        return matriculaDAO.buscarProximosVencimentos(dias);
+    }
+
+    public List<Matricula> buscarPorAlunoNomePaginado(String nome, int page, int size) {
+        return matriculaDAO.buscarPorAlunoNomePaginado(nome, page, size);
+    }
+
+    public long contarPorAlunoNome(String nome) {
+        return matriculaDAO.contarPorAlunoNome(nome);
+    }
 }

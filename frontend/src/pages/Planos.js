@@ -13,6 +13,7 @@ export default function Planos() {
   const [form, setForm] = useState(EMPTY);
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [filtro, setFiltro] = useState('');
   const [confirm, setConfirm] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -21,16 +22,20 @@ export default function Planos() {
 
   const carregar = useCallback(() => {
     setLoading(true);
-    api.get('/planos', { params: { page, size: PAGE_SIZE } })
+    const params = { page, size: PAGE_SIZE };
+    if (filtro) params.nome = filtro;
+    api.get('/planos', { params })
       .then((r) => {
         setPlanos(r.data.content || []);
         setTotalPages(r.data.totalPages || 0);
       })
       .catch(() => setToast({ msg: 'Erro ao carregar planos', type: 'error' }))
       .finally(() => setLoading(false));
-  }, [page]);
+  }, [page, filtro]);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  const onFiltroChange = (e) => { setFiltro(e.target.value); setPage(0); };
 
   const abrirNovo = () => { setForm(EMPTY); setEditId(null); setShowForm(true); };
   const abrirEdicao = (p) => {
@@ -80,6 +85,7 @@ export default function Planos() {
       <div className="card">
         <h3>Planos</h3>
         <div className="toolbar">
+          <input type="text" placeholder="Buscar por nome..." value={filtro} onChange={onFiltroChange} />
           <div className="toolbar-spacer" />
           <button className="btn btn-save" onClick={abrirNovo}>+ Novo Plano</button>
         </div>

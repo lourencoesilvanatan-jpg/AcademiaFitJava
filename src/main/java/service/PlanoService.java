@@ -41,4 +41,12 @@ public class PlanoService {
     public long contarTodos() {
         return planoDAO.contarTodos();
     }
+
+    public List<Plano> buscarPorNomePaginado(String nome, int page, int size) {
+        return planoDAO.buscarPorNomePaginado(nome, page, size);
+    }
+
+    public long contarPorNome(String nome) {
+        return planoDAO.contarPorNome(nome);
+    }
 }

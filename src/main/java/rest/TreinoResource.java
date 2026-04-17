@@ -26,12 +26,16 @@ public class TreinoResource {
     private TreinoExercicioService teService = new TreinoExercicioService();
 
     @GET
-    public Response listar(@QueryParam("page") @DefaultValue("0") int page,
+    public Response listar(@QueryParam("nome") String nome,
+                           @QueryParam("page") @DefaultValue("0") int page,
                            @QueryParam("size") @DefaultValue("10") int size) {
         page = Math.max(0, page);
         size = Math.max(1, Math.min(size, 10000));
-        long total = treinoService.contarTodos();
-        List<Treino> content = treinoService.listarPaginado(page, size);
+        boolean filtrando = nome != null && !nome.trim().isEmpty();
+        long total = filtrando ? treinoService.contarPorNome(nome) : treinoService.contarTodos();
+        List<Treino> content = filtrando
+                ? treinoService.buscarPorNomePaginado(nome, page, size)
+                : treinoService.listarPaginado(page, size);
         return Response.ok(new PageResponse<>(content, total, page, size)).build();
     }
 

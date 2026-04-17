@@ -34,4 +34,32 @@ public class UsuarioDAO extends GenericDAO<Usuario> {
             em.close();
         }
     }
+
+    public java.util.List<model.Usuario> buscarPorNomePaginado(String nome, int pagina, int tamanhoPagina) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            return em.createQuery(
+                    "SELECT u FROM Usuario u WHERE LOWER(u.nome) LIKE :termo OR LOWER(u.login) LIKE :termo ORDER BY u.idUsuario",
+                    model.Usuario.class)
+                    .setParameter("termo", "%" + nome.toLowerCase() + "%")
+                    .setFirstResult(pagina * tamanhoPagina)
+                    .setMaxResults(tamanhoPagina)
+                    .getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    public long contarPorNome(String nome) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            return em.createQuery(
+                    "SELECT COUNT(u) FROM Usuario u WHERE LOWER(u.nome) LIKE :termo OR LOWER(u.login) LIKE :termo",
+                    Long.class)
+                    .setParameter("termo", "%" + nome.toLowerCase() + "%")
+                    .getSingleResult();
+        } finally {
+            em.close();
+        }
+    }
 }

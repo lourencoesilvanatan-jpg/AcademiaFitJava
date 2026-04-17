@@ -20,6 +20,7 @@ export default function Treinos() {
   const [teForm, setTeForm] = useState(EMPTY_TE);
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [filtro, setFiltro] = useState('');
   const [gerenciarId, setGerenciarId] = useState(null);
   const [gerenciarNome, setGerenciarNome] = useState('');
   const [confirm, setConfirm] = useState(null);
@@ -30,16 +31,20 @@ export default function Treinos() {
 
   const carregar = useCallback(() => {
     setLoading(true);
-    api.get('/treinos', { params: { page, size: PAGE_SIZE } })
+    const params = { page, size: PAGE_SIZE };
+    if (filtro) params.nome = filtro;
+    api.get('/treinos', { params })
       .then((r) => {
         setTreinos(r.data.content || []);
         setTotalPages(r.data.totalPages || 0);
       })
       .catch(() => setToast({ msg: 'Erro ao carregar treinos', type: 'error' }))
       .finally(() => setLoading(false));
-  }, [page]);
+  }, [page, filtro]);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  const onFiltroChange = (e) => { setFiltro(e.target.value); setPage(0); };
 
   useEffect(() => {
     api.get('/exercicios', { params: { page: 0, size: ALL } })
@@ -148,6 +153,7 @@ export default function Treinos() {
       <div className="card">
         <h3>Treinos</h3>
         <div className="toolbar">
+          <input type="text" placeholder="Buscar por nome..." value={filtro} onChange={onFiltroChange} />
           <div className="toolbar-spacer" />
           <button className="btn btn-save" onClick={abrirNovo}>+ Novo Treino</button>
         </div>

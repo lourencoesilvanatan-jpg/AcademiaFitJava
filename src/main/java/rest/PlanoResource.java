@@ -19,12 +19,16 @@ public class PlanoResource {
     private PlanoService planoService = new PlanoService();
 
     @GET
-    public Response listar(@QueryParam("page") @DefaultValue("0") int page,
+    public Response listar(@QueryParam("nome") String nome,
+                           @QueryParam("page") @DefaultValue("0") int page,
                            @QueryParam("size") @DefaultValue("10") int size) {
         page = Math.max(0, page);
         size = Math.max(1, Math.min(size, 10000));
-        long total = planoService.contarTodos();
-        List<Plano> content = planoService.listarPaginado(page, size);
+        boolean filtrando = nome != null && !nome.trim().isEmpty();
+        long total = filtrando ? planoService.contarPorNome(nome) : planoService.contarTodos();
+        List<Plano> content = filtrando
+                ? planoService.buscarPorNomePaginado(nome, page, size)
+                : planoService.listarPaginado(page, size);
         return Response.ok(new PageResponse<>(content, total, page, size)).build();
     }
 

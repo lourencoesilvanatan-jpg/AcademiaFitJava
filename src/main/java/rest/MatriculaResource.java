@@ -20,6 +20,7 @@ public class MatriculaResource {
 
     @GET
     public Response listar(@QueryParam("idAluno") Long idAluno,
+                           @QueryParam("nome") String nome,
                            @QueryParam("page") @DefaultValue("0") int page,
                            @QueryParam("size") @DefaultValue("10") int size) {
         page = Math.max(0, page);
@@ -27,9 +28,13 @@ public class MatriculaResource {
 
         long total;
         List<Matricula> content;
+        boolean filtrandoNome = nome != null && !nome.trim().isEmpty();
         if (idAluno != null) {
             total = matriculaService.contarPorAluno(idAluno);
             content = matriculaService.buscarPorAlunoPaginado(idAluno, page, size);
+        } else if (filtrandoNome) {
+            total = matriculaService.contarPorAlunoNome(nome);
+            content = matriculaService.buscarPorAlunoNomePaginado(nome, page, size);
         } else {
             total = matriculaService.contarTodos();
             content = matriculaService.listarPaginado(page, size);

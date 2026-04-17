@@ -12,6 +12,7 @@ export default function Usuarios() {
   const [form, setForm] = useState(EMPTY);
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [filtro, setFiltro] = useState('');
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -19,16 +20,20 @@ export default function Usuarios() {
 
   const carregar = useCallback(() => {
     setLoading(true);
-    api.get('/usuarios', { params: { page, size: PAGE_SIZE } })
+    const params = { page, size: PAGE_SIZE };
+    if (filtro) params.nome = filtro;
+    api.get('/usuarios', { params })
       .then((r) => {
         setUsuarios(r.data.content || []);
         setTotalPages(r.data.totalPages || 0);
       })
       .catch(() => setToast({ msg: 'Erro ao carregar usuarios', type: 'error' }))
       .finally(() => setLoading(false));
-  }, [page]);
+  }, [page, filtro]);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  const onFiltroChange = (e) => { setFiltro(e.target.value); setPage(0); };
 
   const abrirNovo = () => { setForm(EMPTY); setEditId(null); setShowForm(true); };
   const abrirEdicao = (u) => {
@@ -78,6 +83,7 @@ export default function Usuarios() {
       <div className="card">
         <h3>Usuarios</h3>
         <div className="toolbar">
+          <input type="text" placeholder="Buscar por nome ou login..." value={filtro} onChange={onFiltroChange} />
           <div className="toolbar-spacer" />
           <button className="btn btn-save" onClick={abrirNovo}>+ Novo Usuario</button>
         </div>

@@ -22,12 +22,16 @@ public class ExercicioResource {
     private ExercicioService exercicioService = new ExercicioService();
 
     @GET
-    public Response listar(@QueryParam("page") @DefaultValue("0") int page,
+    public Response listar(@QueryParam("nome") String nome,
+                           @QueryParam("page") @DefaultValue("0") int page,
                            @QueryParam("size") @DefaultValue("10") int size) {
         page = Math.max(0, page);
         size = Math.max(1, Math.min(size, 10000));
-        long total = exercicioService.contarTodos();
-        List<Exercicio> content = exercicioService.listarPaginado(page, size);
+        boolean filtrando = nome != null && !nome.trim().isEmpty();
+        long total = filtrando ? exercicioService.contarPorNome(nome) : exercicioService.contarTodos();
+        List<Exercicio> content = filtrando
+                ? exercicioService.buscarPorNomePaginado(nome, page, size)
+                : exercicioService.listarPaginado(page, size);
         return Response.ok(new PageResponse<>(content, total, page, size)).build();
     }
 

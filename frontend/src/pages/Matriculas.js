@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import ConfirmDialog from '../components/ConfirmDialog';
 import FormModal from '../components/FormModal';
@@ -12,12 +13,15 @@ const PAGE_SIZE = 10;
 const ALL = 10000;
 
 export default function Matriculas() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [matriculas, setMatriculas] = useState([]);
   const [alunos, setAlunos] = useState([]);
   const [planos, setPlanos] = useState([]);
   const [form, setForm] = useState(EMPTY);
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [filtro, setFiltro] = useState('');
   const [confirm, setConfirm] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,16 +30,20 @@ export default function Matriculas() {
 
   const carregar = useCallback(() => {
     setLoading(true);
-    api.get('/matriculas', { params: { page, size: PAGE_SIZE } })
+    const params = { page, size: PAGE_SIZE };
+    if (filtro) params.nome = filtro;
+    api.get('/matriculas', { params })
       .then((r) => {
         setMatriculas(r.data.content || []);
         setTotalPages(r.data.totalPages || 0);
       })
       .catch(() => setToast({ msg: 'Erro ao carregar matriculas', type: 'error' }))
       .finally(() => setLoading(false));
-  }, [page]);
+  }, [page, filtro]);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  const onFiltroChange = (e) => { setFiltro(e.target.value); setPage(0); };
 
   useEffect(() => {
     api.get('/alunos', { params: { page: 0, size: ALL } })
@@ -54,6 +62,14 @@ export default function Matriculas() {
     setShowForm(true);
   };
   const fecharModal = () => { setShowForm(false); setForm(EMPTY); setEditId(null); };
+
+  useEffect(() => {
+    const abrir = location.state?.abrir;
+    if (abrir) {
+      abrirEdicao(abrir);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   const salvar = async (e) => {
     e.preventDefault();
@@ -101,6 +117,7 @@ export default function Matriculas() {
       <div className="card">
         <h3>Matriculas</h3>
         <div className="toolbar">
+          <input type="text" placeholder="Buscar por aluno..." value={filtro} onChange={onFiltroChange} />
           <div className="toolbar-spacer" />
           <button className="btn btn-save" onClick={abrirNovo}>+ Nova Matricula</button>
         </div>

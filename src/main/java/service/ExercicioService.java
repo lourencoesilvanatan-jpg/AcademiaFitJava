@@ -41,4 +41,12 @@ public class ExercicioService {
     public long contarTodos() {
         return exercicioDAO.contarTodos();
     }
+
+    public List<Exercicio> buscarPorNomePaginado(String nome, int page, int size) {
+        return exercicioDAO.buscarPorNomePaginado(nome, page, size);
+    }
+
+    public long contarPorNome(String nome) {
+        return exercicioDAO.contarPorNome(nome);
+    }
 }

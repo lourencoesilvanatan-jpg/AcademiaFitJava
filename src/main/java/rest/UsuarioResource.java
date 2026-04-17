@@ -22,12 +22,17 @@ public class UsuarioResource {
     private UsuarioService usuarioService = new UsuarioService();
 
     @GET
-    public Response listar(@QueryParam("page") @DefaultValue("0") int page,
+    public Response listar(@QueryParam("nome") String nome,
+                           @QueryParam("page") @DefaultValue("0") int page,
                            @QueryParam("size") @DefaultValue("10") int size) {
         page = Math.max(0, page);
         size = Math.max(1, Math.min(size, 10000));
-        long total = usuarioService.contarTodos();
-        List<Map<String, Object>> content = usuarioService.listarPaginado(page, size).stream().map(u -> {
+        boolean filtrando = nome != null && !nome.trim().isEmpty();
+        long total = filtrando ? usuarioService.contarPorNome(nome) : usuarioService.contarTodos();
+        List<Usuario> base = filtrando
+                ? usuarioService.buscarPorNomePaginado(nome, page, size)
+                : usuarioService.listarPaginado(page, size);
+        List<Map<String, Object>> content = base.stream().map(u -> {
             Map<String, Object> map = new LinkedHashMap<>();
             map.put("idUsuario", u.getIdUsuario());
             map.put("nome", u.getNome());
