@@ -225,6 +225,8 @@ td.actions .link-edit + .link-delete { margin-left: 6px; }
 .form-grid input::placeholder, .form-grid textarea::placeholder { color: var(--color-text-muted); }
 .form-grid textarea { min-height: 70px; resize: vertical; }
 
+input::-ms-reveal, input::-ms-clear { display: none; }
+
 input[type="date"] { position: relative; }
 input[type="date"]::-webkit-calendar-picker-indicator {
   position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
@@ -352,6 +354,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   animation: fadeIn 0.2s ease;
   backdrop-filter: blur(2px);
 }
+.modal-overlay.modal-overlay-top { z-index: 10001; }
 .modal-card {
   background: var(--bg-surface); border-radius: 12px; padding: 28px; max-width: 420px;
   width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.25);

@@ -4,6 +4,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import FormModal from '../components/FormModal';
 import Toast from '../components/Toast';
 import Loading from '../components/Loading';
+import useDebounce from '../utils/useDebounce';
 
 const EMPTY = { nome: '', valor: '', duracaoDias: '', descricao: '' };
 const PAGE_SIZE = 10;
@@ -14,7 +15,9 @@ export default function Planos() {
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [filtro, setFiltro] = useState('');
+  const debouncedFiltro = useDebounce(filtro, 350);
   const [confirm, setConfirm] = useState(null);
+  const [confirmEdit, setConfirmEdit] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -23,7 +26,7 @@ export default function Planos() {
   const carregar = useCallback(() => {
     setLoading(true);
     const params = { page, size: PAGE_SIZE };
-    if (filtro) params.nome = filtro;
+    if (debouncedFiltro) params.nome = debouncedFiltro;
     api.get('/planos', { params })
       .then((r) => {
         setPlanos(r.data.content || []);
@@ -31,7 +34,7 @@ export default function Planos() {
       })
       .catch(() => setToast({ msg: 'Erro ao carregar planos', type: 'error' }))
       .finally(() => setLoading(false));
-  }, [page, filtro]);
+  }, [page, debouncedFiltro]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -47,19 +50,29 @@ export default function Planos() {
 
   const salvar = async (e) => {
     e.preventDefault();
+    const payload = { ...form, valor: parseFloat(form.valor), duracaoDias: parseInt(form.duracaoDias) };
+    if (editId) { setConfirmEdit({ id: editId, payload }); return; }
     try {
-      const payload = { ...form, valor: parseFloat(form.valor), duracaoDias: parseInt(form.duracaoDias) };
-      if (editId) {
-        await api.put(`/planos/${editId}`, payload);
-        setToast({ msg: 'Plano atualizado!', type: 'success' });
-      } else {
-        await api.post('/planos', payload);
-        setToast({ msg: 'Plano cadastrado!', type: 'success' });
-      }
+      await api.post('/planos', payload);
+      setToast({ msg: 'Plano cadastrado!', type: 'success' });
       fecharModal();
       carregar();
     } catch (err) {
       setToast({ msg: err.response?.data?.erro || 'Erro ao salvar', type: 'error' });
+    }
+  };
+
+  const confirmarEdicao = async () => {
+    if (!confirmEdit) return;
+    try {
+      await api.put(`/planos/${confirmEdit.id}`, confirmEdit.payload);
+      setToast({ msg: 'Plano atualizado!', type: 'success' });
+      setConfirmEdit(null);
+      fecharModal();
+      carregar();
+    } catch (err) {
+      setToast({ msg: err.response?.data?.erro || 'Erro ao salvar', type: 'error' });
+      setConfirmEdit(null);
     }
   };
 
@@ -81,6 +94,10 @@ export default function Planos() {
       <ConfirmDialog show={!!confirm} title="Confirmar Exclusao"
         message="Tem certeza que deseja excluir este plano?" onCancel={() => setConfirm(null)}
         onConfirm={() => excluir(confirm)} />
+      <ConfirmDialog show={!!confirmEdit} title="Confirmar Edicao"
+        message="Deseja realmente salvar as alteracoes deste plano?"
+        confirmLabel="Sim, Salvar" variant="primary"
+        onCancel={() => setConfirmEdit(null)} onConfirm={confirmarEdicao} />
 
       <div className="card">
         <h3>Planos</h3>

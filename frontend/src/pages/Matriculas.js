@@ -5,6 +5,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import FormModal from '../components/FormModal';
 import Toast from '../components/Toast';
 import Loading from '../components/Loading';
+import useDebounce from '../utils/useDebounce';
 
 const STATUS_OPTIONS = ['ATIVA', 'CANCELADA', 'EXPIRADA'];
 const STATUS_LABEL = { ATIVA: 'Ativa', CANCELADA: 'Cancelada', EXPIRADA: 'Expirada' };
@@ -22,7 +23,9 @@ export default function Matriculas() {
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [filtro, setFiltro] = useState('');
+  const debouncedFiltro = useDebounce(filtro, 350);
   const [confirm, setConfirm] = useState(null);
+  const [confirmEdit, setConfirmEdit] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -31,7 +34,7 @@ export default function Matriculas() {
   const carregar = useCallback(() => {
     setLoading(true);
     const params = { page, size: PAGE_SIZE };
-    if (filtro) params.nome = filtro;
+    if (debouncedFiltro) params.nome = debouncedFiltro;
     api.get('/matriculas', { params })
       .then((r) => {
         setMatriculas(r.data.content || []);
@@ -39,7 +42,7 @@ export default function Matriculas() {
       })
       .catch(() => setToast({ msg: 'Erro ao carregar matriculas', type: 'error' }))
       .finally(() => setLoading(false));
-  }, [page, filtro]);
+  }, [page, debouncedFiltro]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -73,25 +76,35 @@ export default function Matriculas() {
 
   const salvar = async (e) => {
     e.preventDefault();
+    const alunoObj = alunos.find((a) => String(a.idAluno) === String(form.aluno));
+    const planoObj = planos.find((p) => String(p.idPlano) === String(form.plano));
+    const payload = {
+      aluno: alunoObj, plano: planoObj,
+      dataInicio: form.dataInicio, dataFim: form.dataFim || null,
+      status: form.status,
+    };
+    if (editId) { setConfirmEdit({ id: editId, payload }); return; }
     try {
-      const alunoObj = alunos.find((a) => String(a.idAluno) === String(form.aluno));
-      const planoObj = planos.find((p) => String(p.idPlano) === String(form.plano));
-      const payload = {
-        aluno: alunoObj, plano: planoObj,
-        dataInicio: form.dataInicio, dataFim: form.dataFim || null,
-        status: form.status,
-      };
-      if (editId) {
-        await api.put(`/matriculas/${editId}`, payload);
-        setToast({ msg: 'Matricula atualizada!', type: 'success' });
-      } else {
-        await api.post('/matriculas', payload);
-        setToast({ msg: 'Matricula cadastrada!', type: 'success' });
-      }
+      await api.post('/matriculas', payload);
+      setToast({ msg: 'Matricula cadastrada!', type: 'success' });
       fecharModal();
       carregar();
     } catch (err) {
       setToast({ msg: err.response?.data?.erro || 'Erro ao salvar', type: 'error' });
+    }
+  };
+
+  const confirmarEdicao = async () => {
+    if (!confirmEdit) return;
+    try {
+      await api.put(`/matriculas/${confirmEdit.id}`, confirmEdit.payload);
+      setToast({ msg: 'Matricula atualizada!', type: 'success' });
+      setConfirmEdit(null);
+      fecharModal();
+      carregar();
+    } catch (err) {
+      setToast({ msg: err.response?.data?.erro || 'Erro ao salvar', type: 'error' });
+      setConfirmEdit(null);
     }
   };
 
@@ -113,6 +126,10 @@ export default function Matriculas() {
       <ConfirmDialog show={!!confirm} title="Confirmar Exclusao"
         message="Tem certeza que deseja excluir esta matricula?" onCancel={() => setConfirm(null)}
         onConfirm={() => excluir(confirm)} />
+      <ConfirmDialog show={!!confirmEdit} title="Confirmar Edicao"
+        message="Deseja realmente salvar as alteracoes desta matricula?"
+        confirmLabel="Sim, Salvar" variant="primary"
+        onCancel={() => setConfirmEdit(null)} onConfirm={confirmarEdicao} />
 
       <div className="card">
         <h3>Matriculas</h3>

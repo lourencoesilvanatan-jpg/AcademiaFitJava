@@ -5,6 +5,7 @@ import FormModal from '../components/FormModal';
 import Toast from '../components/Toast';
 import Loading from '../components/Loading';
 import { maskCPF, maskPhone, validateCPF } from '../utils/masks';
+import useDebounce from '../utils/useDebounce';
 
 function formatarData(iso) {
   if (!iso) return '-';
@@ -21,7 +22,9 @@ export default function Alunos() {
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [filtro, setFiltro] = useState('');
+  const debouncedFiltro = useDebounce(filtro, 350);
   const [confirm, setConfirm] = useState(null);
+  const [confirmEdit, setConfirmEdit] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -31,7 +34,7 @@ export default function Alunos() {
   const carregar = useCallback(() => {
     setLoading(true);
     const params = { page, size: PAGE_SIZE };
-    if (filtro) params.nome = filtro;
+    if (debouncedFiltro) params.nome = debouncedFiltro;
     api.get('/alunos', { params })
       .then((r) => {
         setAlunos(r.data.content || []);
@@ -39,7 +42,7 @@ export default function Alunos() {
       })
       .catch(() => setToast({ msg: 'Erro ao carregar alunos', type: 'error' }))
       .finally(() => setLoading(false));
-  }, [page, filtro]);
+  }, [page, debouncedFiltro]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -90,18 +93,28 @@ export default function Alunos() {
   const salvar = async (e) => {
     e.preventDefault();
     if (!validar()) return;
+    if (editId) { setConfirmEdit({ id: editId, payload: { ...form } }); return; }
     try {
-      if (editId) {
-        await api.put(`/alunos/${editId}`, form);
-        setToast({ msg: 'Aluno atualizado!', type: 'success' });
-      } else {
-        await api.post('/alunos', form);
-        setToast({ msg: 'Aluno cadastrado!', type: 'success' });
-      }
+      await api.post('/alunos', form);
+      setToast({ msg: 'Aluno cadastrado!', type: 'success' });
       fecharModal();
       carregar();
     } catch (err) {
       setToast({ msg: err.response?.data?.erro || 'Erro ao salvar', type: 'error' });
+    }
+  };
+
+  const confirmarEdicao = async () => {
+    if (!confirmEdit) return;
+    try {
+      await api.put(`/alunos/${confirmEdit.id}`, confirmEdit.payload);
+      setToast({ msg: 'Aluno atualizado!', type: 'success' });
+      setConfirmEdit(null);
+      fecharModal();
+      carregar();
+    } catch (err) {
+      setToast({ msg: err.response?.data?.erro || 'Erro ao salvar', type: 'error' });
+      setConfirmEdit(null);
     }
   };
 
@@ -123,6 +136,10 @@ export default function Alunos() {
       <ConfirmDialog show={!!confirm} title="Confirmar Exclusao"
         message="Tem certeza que deseja excluir este aluno?" onCancel={() => setConfirm(null)}
         onConfirm={() => excluir(confirm)} />
+      <ConfirmDialog show={!!confirmEdit} title="Confirmar Edicao"
+        message="Deseja realmente salvar as alteracoes deste aluno?"
+        confirmLabel="Sim, Salvar" variant="primary"
+        onCancel={() => setConfirmEdit(null)} onConfirm={confirmarEdicao} />
 
       <div className="card">
         <h3>Alunos</h3>

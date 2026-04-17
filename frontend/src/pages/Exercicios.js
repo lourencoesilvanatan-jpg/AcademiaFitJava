@@ -4,6 +4,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import FormModal from '../components/FormModal';
 import Toast from '../components/Toast';
 import Loading from '../components/Loading';
+import useDebounce from '../utils/useDebounce';
 
 const GRUPOS = ['PEITORAL','COSTAS','OMBROS','BICEPS','TRICEPS','QUADRICEPS','POSTERIOR','GLUTEOS','PANTURRILHA','ABDOMEN','ANTEBRACO','TRAPEZIO','CORPO_INTEIRO','CARDIO'];
 const GRUPO_LABEL = {PEITORAL:'Peitoral',COSTAS:'Costas',OMBROS:'Ombros',BICEPS:'Biceps',TRICEPS:'Triceps',QUADRICEPS:'Quadriceps',POSTERIOR:'Posterior',GLUTEOS:'Gluteos',PANTURRILHA:'Panturrilha',ABDOMEN:'Abdomen',ANTEBRACO:'Antebraco',TRAPEZIO:'Trapezio',CORPO_INTEIRO:'Corpo Inteiro',CARDIO:'Cardio'};
@@ -17,7 +18,9 @@ export default function Exercicios() {
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [filtro, setFiltro] = useState('');
+  const debouncedFiltro = useDebounce(filtro, 350);
   const [confirm, setConfirm] = useState(null);
+  const [confirmEdit, setConfirmEdit] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -26,7 +29,7 @@ export default function Exercicios() {
   const carregar = useCallback(() => {
     setLoading(true);
     const params = { page, size: PAGE_SIZE };
-    if (filtro) params.nome = filtro;
+    if (debouncedFiltro) params.nome = debouncedFiltro;
     api.get('/exercicios', { params })
       .then((r) => {
         setExercicios(r.data.content || []);
@@ -34,7 +37,7 @@ export default function Exercicios() {
       })
       .catch(() => setToast({ msg: 'Erro ao carregar exercicios', type: 'error' }))
       .finally(() => setLoading(false));
-  }, [page, filtro]);
+  }, [page, debouncedFiltro]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -50,19 +53,29 @@ export default function Exercicios() {
 
   const salvar = async (e) => {
     e.preventDefault();
+    const payload = { ...form, grupoMuscular: form.grupoMuscular || null };
+    if (editId) { setConfirmEdit({ id: editId, payload }); return; }
     try {
-      const payload = { ...form, grupoMuscular: form.grupoMuscular || null };
-      if (editId) {
-        await api.put(`/exercicios/${editId}`, payload);
-        setToast({ msg: 'Exercicio atualizado!', type: 'success' });
-      } else {
-        await api.post('/exercicios', payload);
-        setToast({ msg: 'Exercicio cadastrado!', type: 'success' });
-      }
+      await api.post('/exercicios', payload);
+      setToast({ msg: 'Exercicio cadastrado!', type: 'success' });
       fecharModal();
       carregar();
     } catch (err) {
       setToast({ msg: err.response?.data?.erro || 'Erro ao salvar', type: 'error' });
+    }
+  };
+
+  const confirmarEdicao = async () => {
+    if (!confirmEdit) return;
+    try {
+      await api.put(`/exercicios/${confirmEdit.id}`, confirmEdit.payload);
+      setToast({ msg: 'Exercicio atualizado!', type: 'success' });
+      setConfirmEdit(null);
+      fecharModal();
+      carregar();
+    } catch (err) {
+      setToast({ msg: err.response?.data?.erro || 'Erro ao salvar', type: 'error' });
+      setConfirmEdit(null);
     }
   };
 
@@ -84,6 +97,10 @@ export default function Exercicios() {
       <ConfirmDialog show={!!confirm} title="Confirmar Exclusao"
         message="Tem certeza que deseja excluir este exercicio?" onCancel={() => setConfirm(null)}
         onConfirm={() => excluir(confirm)} />
+      <ConfirmDialog show={!!confirmEdit} title="Confirmar Edicao"
+        message="Deseja realmente salvar as alteracoes deste exercicio?"
+        confirmLabel="Sim, Salvar" variant="primary"
+        onCancel={() => setConfirmEdit(null)} onConfirm={confirmarEdicao} />
 
       <div className="card">
         <h3>Exercicios</h3>

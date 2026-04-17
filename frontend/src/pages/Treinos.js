@@ -4,6 +4,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import FormModal from '../components/FormModal';
 import Toast from '../components/Toast';
 import Loading from '../components/Loading';
+import useDebounce from '../utils/useDebounce';
 
 const NIVEIS = ['INICIANTE', 'INTERMEDIARIO', 'AVANCADO'];
 const NIVEL_LABEL = { INICIANTE: 'Iniciante', INTERMEDIARIO: 'Intermediario', AVANCADO: 'Avancado' };
@@ -21,9 +22,11 @@ export default function Treinos() {
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [filtro, setFiltro] = useState('');
+  const debouncedFiltro = useDebounce(filtro, 350);
   const [gerenciarId, setGerenciarId] = useState(null);
   const [gerenciarNome, setGerenciarNome] = useState('');
   const [confirm, setConfirm] = useState(null);
+  const [confirmEdit, setConfirmEdit] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -32,7 +35,7 @@ export default function Treinos() {
   const carregar = useCallback(() => {
     setLoading(true);
     const params = { page, size: PAGE_SIZE };
-    if (filtro) params.nome = filtro;
+    if (debouncedFiltro) params.nome = debouncedFiltro;
     api.get('/treinos', { params })
       .then((r) => {
         setTreinos(r.data.content || []);
@@ -40,7 +43,7 @@ export default function Treinos() {
       })
       .catch(() => setToast({ msg: 'Erro ao carregar treinos', type: 'error' }))
       .finally(() => setLoading(false));
-  }, [page, filtro]);
+  }, [page, debouncedFiltro]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -79,24 +82,33 @@ export default function Treinos() {
 
   const salvar = async (e) => {
     e.preventDefault();
+    const payload = { ...form, nivel: form.nivel || null };
+    if (editId) { setConfirmEdit({ id: editId, payload }); return; }
     try {
-      const payload = { ...form, nivel: form.nivel || null };
-      if (editId) {
-        await api.put(`/treinos/${editId}`, payload);
-        setToast({ msg: 'Treino atualizado!', type: 'success' });
-        fecharModal();
-      } else {
-        const res = await api.post('/treinos', payload);
-        setToast({ msg: 'Treino cadastrado! Adicione os exercicios abaixo.', type: 'success' });
-        fecharModal();
-        setGerenciarId(res.data.idTreino);
-        setGerenciarNome(res.data.nome);
-        setExerciciosDoTreino([]);
-        setTeForm(EMPTY_TE);
-      }
+      const res = await api.post('/treinos', payload);
+      setToast({ msg: 'Treino cadastrado! Adicione os exercicios abaixo.', type: 'success' });
+      fecharModal();
+      setGerenciarId(res.data.idTreino);
+      setGerenciarNome(res.data.nome);
+      setExerciciosDoTreino([]);
+      setTeForm(EMPTY_TE);
       carregar();
     } catch (err) {
       setToast({ msg: err.response?.data?.erro || 'Erro ao salvar', type: 'error' });
+    }
+  };
+
+  const confirmarEdicao = async () => {
+    if (!confirmEdit) return;
+    try {
+      await api.put(`/treinos/${confirmEdit.id}`, confirmEdit.payload);
+      setToast({ msg: 'Treino atualizado!', type: 'success' });
+      setConfirmEdit(null);
+      fecharModal();
+      carregar();
+    } catch (err) {
+      setToast({ msg: err.response?.data?.erro || 'Erro ao salvar', type: 'error' });
+      setConfirmEdit(null);
     }
   };
 
@@ -149,6 +161,10 @@ export default function Treinos() {
       <ConfirmDialog show={!!confirm} title="Confirmar Exclusao"
         message="Tem certeza que deseja excluir este treino e seus exercicios?" onCancel={() => setConfirm(null)}
         onConfirm={() => excluir(confirm)} />
+      <ConfirmDialog show={!!confirmEdit} title="Confirmar Edicao"
+        message="Deseja realmente salvar as alteracoes deste treino?"
+        confirmLabel="Sim, Salvar" variant="primary"
+        onCancel={() => setConfirmEdit(null)} onConfirm={confirmarEdicao} />
 
       <div className="card">
         <h3>Treinos</h3>

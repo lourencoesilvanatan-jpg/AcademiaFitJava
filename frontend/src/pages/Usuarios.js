@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api from '../services/api';
+import ConfirmDialog from '../components/ConfirmDialog';
 import FormModal from '../components/FormModal';
 import Toast from '../components/Toast';
 import Loading from '../components/Loading';
+import useDebounce from '../utils/useDebounce';
 
 const EMPTY = { nome: '', login: '', senha: '' };
 const PAGE_SIZE = 10;
@@ -13,6 +15,9 @@ export default function Usuarios() {
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [filtro, setFiltro] = useState('');
+  const debouncedFiltro = useDebounce(filtro, 350);
+  const [confirmEdit, setConfirmEdit] = useState(null);
+  const [confirmToggle, setConfirmToggle] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -21,7 +26,7 @@ export default function Usuarios() {
   const carregar = useCallback(() => {
     setLoading(true);
     const params = { page, size: PAGE_SIZE };
-    if (filtro) params.nome = filtro;
+    if (debouncedFiltro) params.nome = debouncedFiltro;
     api.get('/usuarios', { params })
       .then((r) => {
         setUsuarios(r.data.content || []);
@@ -29,7 +34,7 @@ export default function Usuarios() {
       })
       .catch(() => setToast({ msg: 'Erro ao carregar usuarios', type: 'error' }))
       .finally(() => setLoading(false));
-  }, [page, filtro]);
+  }, [page, debouncedFiltro]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -45,20 +50,19 @@ export default function Usuarios() {
 
   const salvar = async (e) => {
     e.preventDefault();
+    if (editId) {
+      const payload = { nome: form.nome, login: form.login };
+      if (form.senha) payload.senha = form.senha;
+      setConfirmEdit({ id: editId, payload });
+      return;
+    }
+    if (!form.senha) {
+      setToast({ msg: 'Senha e obrigatoria para novo usuario', type: 'error' });
+      return;
+    }
     try {
-      if (editId) {
-        const payload = { nome: form.nome, login: form.login };
-        if (form.senha) payload.senha = form.senha;
-        await api.put(`/usuarios/${editId}`, payload);
-        setToast({ msg: 'Usuario atualizado!', type: 'success' });
-      } else {
-        if (!form.senha) {
-          setToast({ msg: 'Senha e obrigatoria para novo usuario', type: 'error' });
-          return;
-        }
-        await api.post('/usuarios', form);
-        setToast({ msg: 'Usuario cadastrado!', type: 'success' });
-      }
+      await api.post('/usuarios', form);
+      setToast({ msg: 'Usuario cadastrado!', type: 'success' });
       fecharModal();
       carregar();
     } catch (err) {
@@ -66,19 +70,48 @@ export default function Usuarios() {
     }
   };
 
-  const toggleAtivo = async (id) => {
+  const confirmarEdicao = async () => {
+    if (!confirmEdit) return;
     try {
-      await api.put(`/usuarios/${id}/toggle`);
+      await api.put(`/usuarios/${confirmEdit.id}`, confirmEdit.payload);
+      setToast({ msg: 'Usuario atualizado!', type: 'success' });
+      setConfirmEdit(null);
+      fecharModal();
+      carregar();
+    } catch (err) {
+      setToast({ msg: err.response?.data?.erro || 'Erro ao salvar', type: 'error' });
+      setConfirmEdit(null);
+    }
+  };
+
+  const confirmarToggle = async () => {
+    if (!confirmToggle) return;
+    try {
+      await api.put(`/usuarios/${confirmToggle.id}/toggle`);
       setToast({ msg: 'Status atualizado!', type: 'success' });
+      setConfirmToggle(null);
       carregar();
     } catch (err) {
       setToast({ msg: err.response?.data?.erro || 'Erro ao atualizar status', type: 'error' });
+      setConfirmToggle(null);
     }
   };
 
   return (
     <>
       <Toast message={toast?.msg} type={toast?.type} onClose={() => setToast(null)} />
+      <ConfirmDialog show={!!confirmEdit} title="Confirmar Edicao"
+        message="Deseja realmente salvar as alteracoes deste usuario?"
+        confirmLabel="Sim, Salvar" variant="primary"
+        onCancel={() => setConfirmEdit(null)} onConfirm={confirmarEdicao} />
+      <ConfirmDialog show={!!confirmToggle}
+        title={confirmToggle?.ativo ? 'Desativar Usuario' : 'Ativar Usuario'}
+        message={confirmToggle?.ativo
+          ? `Deseja realmente desativar o usuario "${confirmToggle?.nome}"? Ele nao podera mais acessar o sistema.`
+          : `Deseja realmente reativar o usuario "${confirmToggle?.nome}"? Ele voltara a ter acesso ao sistema.`}
+        confirmLabel={confirmToggle?.ativo ? 'Sim, Desativar' : 'Sim, Ativar'}
+        variant={confirmToggle?.ativo ? 'danger' : 'primary'}
+        onCancel={() => setConfirmToggle(null)} onConfirm={confirmarToggle} />
 
       <div className="card">
         <h3>Usuarios</h3>
@@ -104,7 +137,7 @@ export default function Usuarios() {
                     </td>
                     <td className="actions">
                       <button className="link-edit" onClick={() => abrirEdicao(u)}>Editar</button>
-                      <button className="link-delete" onClick={() => toggleAtivo(u.idUsuario)}>
+                      <button className="link-delete" onClick={() => setConfirmToggle({ id: u.idUsuario, nome: u.nome, ativo: u.ativo })}>
                         {u.ativo ? 'Desativar' : 'Ativar'}
                       </button>
                     </td>
